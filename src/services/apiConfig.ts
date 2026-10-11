@@ -1,6 +1,7 @@
 export interface ApiConfigState {
   isMockMode: boolean;
   stripeKey: string;
+  backendApiUrl: string;
   openaiKey: string;
   geminiKey: string;
   resendKey: string;
@@ -25,6 +26,7 @@ const EMAIL_OUTBOX_KEY = "shared_ui_email_outbox";
 const DEFAULT_CONFIG: ApiConfigState = {
   isMockMode: true,
   stripeKey: (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || "",
+  backendApiUrl: (import.meta as any).env?.VITE_BACKEND_API_URL || "",
   openaiKey: (import.meta as any).env?.VITE_OPENAI_API_KEY || "",
   geminiKey: (import.meta as any).env?.VITE_GEMINI_API_KEY || "",
   resendKey: (import.meta as any).env?.VITE_RESEND_API_KEY || "",

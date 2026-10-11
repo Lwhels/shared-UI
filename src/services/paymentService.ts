@@ -1,4 +1,10 @@
-import { getApiConfig, simulateNetworkDelay } from "./apiConfig";
+import { getApiConfig } from "./apiConfig";
+import {
+  executeStripePayment,
+  StripeCardDetails,
+  StripePaymentIntentParams,
+  detectCardBrand,
+} from "../integrations/stripe/stripeClient";
 
 export interface PaymentDetails {
   cardNumber: string;
@@ -20,35 +26,43 @@ export interface PaymentResult {
   timestamp: string;
   last4: string;
   receiptUrl: string;
+  cardBrand?: string;
   error?: string;
   isMock: boolean;
 }
 
 export async function processPayment(details: PaymentDetails): Promise<PaymentResult> {
   const config = getApiConfig();
-  await simulateNetworkDelay(500, 1000);
 
-  // Basic validation
-  const cleanCard = details.cardNumber.replace(/\s+/g, "");
-  if (cleanCard.length < 13) {
-    throw new Error("Invalid card number. Please provide at least 13 digits.");
-  }
+  const cardDetails: StripeCardDetails = {
+    cardNumber: details.cardNumber,
+    cardHolder: details.cardHolder,
+    expiry: details.expiry,
+    cvv: details.cvv,
+  };
 
-  // If live Stripe Key is provided, could dispatch to backend or Stripe API
-  const isMock = !config.stripeKey || config.isMockMode;
-  const last4 = cleanCard.slice(-4) || "4242";
-  const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-  const chargeId = `ch_${Math.random().toString(36).substring(2, 14)}`;
-
-  return {
-    success: true,
-    transactionId,
-    chargeId,
+  const intentParams: StripePaymentIntentParams = {
     amount: details.amount,
     currency: details.currency || "USD",
-    timestamp: new Date().toISOString(),
-    last4,
-    receiptUrl: `https://receipts.shared-ui.dev/${chargeId}`,
-    isMock,
+    customerEmail: details.customerEmail,
+    description: details.description,
+    metadata: {
+      cardHolder: details.cardHolder,
+    },
+  };
+
+  const stripeResult = await executeStripePayment(cardDetails, intentParams);
+
+  return {
+    success: stripeResult.success,
+    transactionId: stripeResult.paymentIntentId,
+    chargeId: stripeResult.chargeId,
+    amount: stripeResult.amount,
+    currency: stripeResult.currency,
+    timestamp: stripeResult.timestamp,
+    last4: stripeResult.last4,
+    cardBrand: stripeResult.cardBrand,
+    receiptUrl: stripeResult.receiptUrl,
+    isMock: stripeResult.isMock,
   };
 }
