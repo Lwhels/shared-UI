@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import confetti from "canvas-confetti";
 import {
   Spotlight,
   MovingBorderButton,
@@ -7,6 +8,7 @@ import {
   GlowingBadge,
   TextReveal,
 } from "../../components";
+import { sendEmail } from "../../services/emailService";
 import {
   BookOpen,
   Clock,
@@ -17,8 +19,19 @@ import {
   X,
   Sparkles,
   Check,
+  Search,
+  MessageSquare,
+  Send,
+  Eye,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface Comment {
+  id: string;
+  author: string;
+  text: string;
+  timestamp: string;
+}
 
 interface Article {
   id: string;
@@ -34,15 +47,23 @@ interface Article {
   };
   claps: number;
   content: string[];
+  comments: Comment[];
 }
 
 export const BlogDemo: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
-  const [clapCount, setClapCount] = useState<number>(42);
+  const [showBookmarksDrawer, setShowBookmarksDrawer] = useState(false);
+
+  // Comments & Reader
+  const [newCommentAuthor, setNewCommentAuthor] = useState("Guest Reader");
+  const [newCommentText, setNewCommentText] = useState("");
+  const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+  const [shareToast, setShareToast] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,7 +79,7 @@ export const BlogDemo: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const articles: Article[] = [
+  const [articles, setArticles] = useState<Article[]>([
     {
       id: "art-1",
       title: "The Physics of Delight: Engineering Tactile Spring Interfaces in Modern React",
@@ -72,6 +93,10 @@ export const BlogDemo: React.FC = () => {
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
       },
       claps: 342,
+      comments: [
+        { id: "c1", author: "Kaelen Voss", text: "The damping ratio formula you referenced completely fixed our mobile jitter. Fantastic writeup!", timestamp: "2h ago" },
+        { id: "c2", author: "Sarah Chen", text: "Agreed. Hardware acceleration is non-negotiable for 120Hz displays.", timestamp: "5h ago" },
+      ],
       content: [
         "In contemporary software design, animation is frequently treated as an afterthought—an aesthetic garnish dusted atop an otherwise rigid grid. However, human perceptual neuroscience demonstrates that our brains process tactile continuity and physical inertia far deeper than static geometry.",
         "When an interactive card tilts according to cursor proximity, or when a button generates subtle gravitational pull before the click register, the interface communicates affordance through natural physical metaphor.",
@@ -91,6 +116,9 @@ export const BlogDemo: React.FC = () => {
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
       },
       claps: 218,
+      comments: [
+        { id: "c3", author: "David Kim", text: "We swapped out our flat tables for subtle spotlight rows and developer engagement skyrocketed.", timestamp: "1d ago" },
+      ],
       content: [
         "Minimalism achieved its historic goal of stripping away superfluous skeumorphic textures. But in doing so, it frequently eradicated hierarchy, making primary levers indistinguishable from background terrain.",
         "The new wave of dark spatial UI uses selective radial spotlights and 3D perspective transforms not to mimic physical wood or leather, but to simulate cinematic optic lenses.",
@@ -109,33 +137,20 @@ export const BlogDemo: React.FC = () => {
         avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
       },
       claps: 412,
+      comments: [],
       content: [
         "Mouse trackers, WebGL shaders, and physics-driven gesture carousels have historically wrestled with Server-Side Rendering hydration mismatches. Modern bundlers like Vite pair with standalone client component libraries to deliver immediate interactive fidelity.",
       ],
     },
-    {
-      id: "art-4",
-      title: "The Architecture of Vehicular Media: Extracting Production Design Systems into Shared Repos",
-      excerpt: "A deep dive into how bespoke agency components can be generalized into scalable multi-theme component engines.",
-      category: "Case Study",
-      readTime: "6 min read",
-      date: "Sep 29, 2026",
-      author: {
-        name: "Sarah Chen",
-        role: "Creative Director",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
-      },
-      claps: 512,
-      content: [
-        "When building Vehicular Media, every motion primitive was tuned for automotive majesty: high-contrast dark backdrops, amber headlights, and fluid speed. Extracting this into shared-UI required isolating the core mechanics while externalizing design tokens.",
-      ],
-    },
-  ];
+  ]);
 
-  const filteredArticles =
-    selectedCategory === "all"
-      ? articles
-      : articles.filter((a) => a.category === selectedCategory);
+  const filteredArticles = articles.filter((a) => {
+    const matchesCat = selectedCategory === "all" || a.category === selectedCategory;
+    const matchesSearch =
+      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
   const toggleBookmark = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -145,6 +160,62 @@ export const BlogDemo: React.FC = () => {
       else next.add(id);
       return next;
     });
+  };
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCommentText.trim() || !selectedArticle) return;
+
+    const commentObj: Comment = {
+      id: `c_${Date.now()}`,
+      author: newCommentAuthor || "Anonymous",
+      text: newCommentText,
+      timestamp: "Just now",
+    };
+
+    setArticles((prev) =>
+      prev.map((a) =>
+        a.id === selectedArticle.id
+          ? { ...a, comments: [commentObj, ...a.comments] }
+          : a
+      )
+    );
+
+    setSelectedArticle((prev) =>
+      prev ? { ...prev, comments: [commentObj, ...prev.comments] } : null
+    );
+
+    setNewCommentText("");
+  };
+
+  const handleClap = (articleId: string) => {
+    setArticles((prev) =>
+      prev.map((a) => (a.id === articleId ? { ...a, claps: a.claps + 1 } : a))
+    );
+    setSelectedArticle((prev) => (prev ? { ...prev, claps: prev.claps + 1 } : null));
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+
+    await sendEmail({
+      to: newsletterEmail,
+      subject: "Welcome to The Kinetic Journal · Issue 42 Delivery",
+      template: "newsletter_welcome",
+      data: {
+        subscriberEmail: newsletterEmail,
+        welcomeIssue: "The Physics of Tactile Motion Interfaces",
+      },
+    });
+
+    confetti({
+      particleCount: 70,
+      spread: 50,
+      origin: { y: 0.6 },
+    });
+
+    setNewsletterSubscribed(true);
   };
 
   return (
@@ -169,12 +240,24 @@ export const BlogDemo: React.FC = () => {
           <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed">
             Essays, architectural breakdowns, and design system philosophy from the forefront of digital craftsmanship.
           </p>
+
+          <div className="pt-2 flex justify-center">
+            <div className="relative w-full max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search essays by keyword, topic, or author..."
+                className="w-full bg-white/5 border border-white/15 rounded-full pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Filter and Article Feed */}
       <section className="py-16 px-6 max-w-6xl mx-auto">
-        {/* Category selector */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-12 pb-6 border-b border-white/10">
           <div className="flex flex-wrap items-center gap-2">
             {[
@@ -182,7 +265,6 @@ export const BlogDemo: React.FC = () => {
               { id: "Motion UI", label: "Motion UI" },
               { id: "Design Systems", label: "Design Systems" },
               { id: "Engineering", label: "Engineering" },
-              { id: "Case Study", label: "Case Study" },
             ].map((cat) => (
               <button
                 key={cat.id}
@@ -198,8 +280,16 @@ export const BlogDemo: React.FC = () => {
             ))}
           </div>
 
-          <div className="text-xs text-zinc-500 font-mono">
-            {filteredArticles.length} Published Articles
+          <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
+            <button
+              onClick={() => setShowBookmarksDrawer(true)}
+              className="flex items-center gap-1.5 hover:text-white"
+            >
+              <Bookmark size={13} className="text-amber-400" />
+              <span>Bookmarks ({bookmarkedIds.size})</span>
+            </button>
+            <span>·</span>
+            <span>{filteredArticles.length} Essays</span>
           </div>
         </div>
 
@@ -210,10 +300,7 @@ export const BlogDemo: React.FC = () => {
             return (
               <Spotlight
                 key={article.id}
-                onClick={() => {
-                  setSelectedArticle(article);
-                  setClapCount(article.claps);
-                }}
+                onClick={() => setSelectedArticle(article)}
                 className="p-8 cursor-pointer transition-all hover:border-amber-500/40 group"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -237,25 +324,24 @@ export const BlogDemo: React.FC = () => {
                       {article.excerpt}
                     </p>
 
-                    {/* Author block */}
-                    <div className="flex items-center gap-3 pt-2">
-                      <img
-                        src={article.author.avatar}
-                        alt={article.author.name}
-                        className="w-7 h-7 rounded-full object-cover border border-white/20"
-                      />
-                      <div className="text-xs">
-                        <span className="font-semibold text-white">
+                    <div className="flex items-center gap-4 pt-2">
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={article.author.avatar}
+                          alt={article.author.name}
+                          className="w-7 h-7 rounded-full object-cover border border-white/20"
+                        />
+                        <span className="text-xs font-semibold text-white">
                           {article.author.name}
                         </span>
-                        <span className="text-zinc-500 ml-2">
-                          {article.author.role}
-                        </span>
                       </div>
+
+                      <span className="text-xs text-zinc-500 font-mono flex items-center gap-1">
+                        <MessageSquare size={12} /> {article.comments.length} Comments
+                      </span>
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-3 md:flex-col md:items-end shrink-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
                     <button
                       onClick={(e) => toggleBookmark(article.id, e)}
@@ -281,11 +367,11 @@ export const BlogDemo: React.FC = () => {
         </div>
       </section>
 
-      {/* Newsletter Signup Card */}
+      {/* Newsletter Signup Card with Resend Mock Integration */}
       <section className="py-20 px-6 max-w-4xl mx-auto">
         <GlassCard className="p-10 text-center">
           <div className="max-w-md mx-auto space-y-4">
-            <GlowingBadge variant="amber">WEEKLY INTEL</GlowingBadge>
+            <GlowingBadge variant="amber">WEEKLY INTEL DISPATCH</GlowingBadge>
             <h3 className="text-2xl font-bold font-serif text-white">
               Never miss a design deep-dive.
             </h3>
@@ -294,29 +380,25 @@ export const BlogDemo: React.FC = () => {
             </p>
 
             {newsletterSubscribed ? (
-              <div className="flex items-center justify-center gap-2 text-emerald-400 text-xs font-semibold py-3">
+              <div className="flex items-center justify-center gap-2 text-emerald-400 text-xs font-semibold py-3 font-mono">
                 <Check size={16} />
-                <span>Subscription Confirmed. Welcome aboard!</span>
+                <span>Subscription Confirmed! Welcome issue sent to your outbox.</span>
               </div>
             ) : (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setNewsletterSubscribed(true);
-                }}
-                className="flex flex-col sm:flex-row gap-2 pt-2"
-              >
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-2 pt-2">
                 <input
                   type="email"
                   required
                   placeholder="name@studio.com"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
                   className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
                 />
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors shrink-0"
                 >
-                  Join Dispatch
+                  Join Dispatch →
                 </button>
               </form>
             )}
@@ -324,7 +406,7 @@ export const BlogDemo: React.FC = () => {
         </GlassCard>
       </section>
 
-      {/* Reader Modal Drawer */}
+      {/* Reader Modal Drawer with Comments Section */}
       <AnimatePresence>
         {selectedArticle && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
@@ -332,9 +414,8 @@ export const BlogDemo: React.FC = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
-              className="w-full max-w-3xl bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-10 shadow-2xl relative my-8"
+              className="w-full max-w-3xl bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-10 shadow-2xl relative my-8 space-y-6"
             >
-              {/* Close button */}
               <button
                 onClick={() => setSelectedArticle(null)}
                 className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
@@ -343,61 +424,167 @@ export const BlogDemo: React.FC = () => {
                 <X size={18} />
               </button>
 
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="font-mono text-amber-400 font-semibold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
-                    {selectedArticle.category}
-                  </span>
-                  <span className="text-zinc-500">{selectedArticle.readTime}</span>
-                  <span className="text-zinc-500">{selectedArticle.date}</span>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="font-mono text-amber-400 font-semibold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                  {selectedArticle.category}
+                </span>
+                <span className="text-zinc-500">{selectedArticle.readTime}</span>
+                <span className="text-zinc-500">{selectedArticle.date}</span>
+              </div>
+
+              <h1 className="text-2xl sm:text-4xl font-bold font-serif text-white leading-tight">
+                {selectedArticle.title}
+              </h1>
+
+              {/* Author card */}
+              <div className="flex items-center gap-3 pb-6 border-b border-white/10">
+                <img
+                  src={selectedArticle.author.avatar}
+                  alt={selectedArticle.author.name}
+                  className="w-10 h-10 rounded-full object-cover border border-white/20"
+                />
+                <div>
+                  <h4 className="text-sm font-semibold text-white">
+                    {selectedArticle.author.name}
+                  </h4>
+                  <p className="text-xs text-zinc-400">
+                    {selectedArticle.author.role}
+                  </p>
                 </div>
+              </div>
 
-                <h1 className="text-2xl sm:text-4xl font-bold font-serif text-white leading-tight">
-                  {selectedArticle.title}
-                </h1>
+              {/* Body paragraphs */}
+              <div className="space-y-4 text-sm sm:text-base text-zinc-300 font-serif leading-relaxed">
+                {selectedArticle.content.map((p, idx) => (
+                  <p key={idx}>{p}</p>
+                ))}
+              </div>
 
-                {/* Author card */}
-                <div className="flex items-center gap-3 pb-6 border-b border-white/10">
-                  <img
-                    src={selectedArticle.author.avatar}
-                    alt={selectedArticle.author.name}
-                    className="w-10 h-10 rounded-full object-cover border border-white/20"
-                  />
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">
-                      {selectedArticle.author.name}
-                    </h4>
-                    <p className="text-xs text-zinc-400">
-                      {selectedArticle.author.role}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Body paragraphs */}
-                <div className="space-y-4 text-sm sm:text-base text-zinc-300 font-serif leading-relaxed">
-                  {selectedArticle.content.map((p, idx) => (
-                    <p key={idx}>{p}</p>
-                  ))}
-                </div>
-
-                {/* Reader footer interactive claps */}
-                <div className="pt-8 border-t border-white/10 flex items-center justify-between">
+              {/* Reader footer interactive claps & share */}
+              <div className="pt-8 border-t border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setClapCount((c) => c + 1)}
+                    onClick={() => handleClap(selectedArticle.id)}
                     className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-transform active:scale-90"
                   >
                     <ThumbsUp size={14} className="text-amber-400" />
-                    <span>Applause ({clapCount})</span>
+                    <span>Applause ({selectedArticle.claps})</span>
                   </button>
 
                   <button
-                    onClick={() => setSelectedArticle(null)}
-                    className="text-xs font-semibold text-zinc-400 hover:text-white"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href);
+                      setShareToast(true);
+                      setTimeout(() => setShareToast(false), 2000);
+                    }}
+                    className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
+                    title="Copy essay link"
                   >
-                    Finish Reading [ESC]
+                    <Share2 size={15} />
                   </button>
+                  {shareToast && <span className="text-xs text-emerald-400 font-mono">Link Copied!</span>}
+                </div>
+
+                <button
+                  onClick={() => setSelectedArticle(null)}
+                  className="text-xs font-semibold text-zinc-400 hover:text-white"
+                >
+                  Close Reader [ESC]
+                </button>
+              </div>
+
+              {/* Reader Comments Section */}
+              <div className="pt-6 border-t border-white/10 space-y-4">
+                <h4 className="text-sm font-bold font-display text-white">
+                  Discussion ({selectedArticle.comments.length})
+                </h4>
+
+                <form onSubmit={handleAddComment} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add your technical thoughts..."
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold text-xs"
+                  >
+                    Post
+                  </button>
+                </form>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {selectedArticle.comments.map((c) => (
+                    <div key={c.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="font-semibold text-white">{c.author}</span>
+                        <span className="text-zinc-500 font-mono">{c.timestamp}</span>
+                      </div>
+                      <p className="text-xs text-zinc-300">{c.text}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Bookmarks Saved Drawer */}
+      <AnimatePresence>
+        {showBookmarksDrawer && (
+          <div className="fixed inset-0 z-50 flex items-center justify-end p-4 bg-black/75 backdrop-blur-sm">
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              className="w-full max-w-md h-full bg-zinc-950 border-l border-white/10 p-6 flex flex-col justify-between shadow-2xl"
+            >
+              <div>
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Bookmark size={16} className="text-amber-400" />
+                    <span>Your Reading List ({bookmarkedIds.size})</span>
+                  </h3>
+                  <button
+                    onClick={() => setShowBookmarksDrawer(false)}
+                    className="p-1 rounded-full text-zinc-400 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="py-6 space-y-3">
+                  {bookmarkedIds.size === 0 ? (
+                    <p className="text-xs text-zinc-500 text-center py-12">No bookmarked essays yet.</p>
+                  ) : (
+                    articles
+                      .filter((a) => bookmarkedIds.has(a.id))
+                      .map((a) => (
+                        <div
+                          key={a.id}
+                          onClick={() => {
+                            setSelectedArticle(a);
+                            setShowBookmarksDrawer(false);
+                          }}
+                          className="p-3 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer space-y-1"
+                        >
+                          <h4 className="text-xs font-bold text-white">{a.title}</h4>
+                          <span className="text-[10px] text-zinc-500 font-mono">{a.readTime}</span>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowBookmarksDrawer(false)}
+                className="w-full py-2.5 rounded-xl bg-white/10 text-xs font-semibold text-white"
+              >
+                Close Drawer
+              </button>
             </motion.div>
           </div>
         )}

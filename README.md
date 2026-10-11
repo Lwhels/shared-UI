@@ -9,15 +9,23 @@ Shared-UI is an open, modular collection of high-craft React motion components, 
 ## 🌟 Highlights
 
 - **Extracted from Production**: Distilled directly from Vehicular Media’s flagship creative agency platform, stripping away proprietary assets while preserving physics, easing curves, and specular lighting.
-- **8 Complete Demo Websites**: Pre-built, domain-specific demo applications featuring realistic mock data, interactive state machines, and dedicated styling identities:
-  1. 🏎️ **Portfolio & Studio** (`/demos/portfolio`) - Automotive & commercial film production showcase with 3D project perspective cards, showreel modal, and RAW sensor color reveal.
-  2. 🛍️ **Luxury E-Commerce** (`/demos/ecommerce`) - Cyber/minimalist technical apparel store with spotlight catalog, interactive slide-out bag drawer, coupon codes, and confetti checkout.
-  3. 🍽️ **Fine Dining Restaurant** (`/demos/restaurant`) - Michelin-starred gastronomic atelier with interactive plate secret revealer, seasonal degustation menus, and online table reservation.
-  4. 📈 **Enterprise SaaS** (`/demos/business`) - Silicon Indigo cloud telemetry landing page with interactive annual ROI savings calculator, 3D pricing tiers, and partner marquee.
-  5. 📰 **Editorial Blog** (`/demos/blog`) - High-craft journal featuring real-time reading progress bar, topic filters, interactive applause counter, and full reader drawer.
-  6. 🏝️ **Retreat & Hospitality** (`/demos/booking`) - Private sanctuary villa booking engine with stay duration filters, 3D villa cards, and cylindrical VIP concierge carousel.
-  7. 👥 **Creator Community** (`/demos/social`) - Community feed with interactive post composer, spring like animations, magnetic follow buttons, and live presence status dots.
-  8. 💬 **Chat & Messenger** (`/demos/chat`) - Sleek dark glass team workspace messenger with channel switcher, message bubble reactions, and automated AI bot responses.
+- **8 Complete, Fully Functional Demo Websites**: Production-grade web applications featuring domain interactions, realistic mock state machines, and turnkey API key integrations:
+  1. 🏎️ **Portfolio & Studio** (`/demos/portfolio`) - Automotive film agency with interactive production budget & quote calculator, case study breakdown modals, 4K showreel viewer, and direct proposal dispatch.
+  2. 🛍️ **Luxury E-Commerce** (`/demos/ecommerce`) - High-end technical apparel store with product detail modals (sizes, specs, stock counts), interactive cart drawer, and complete multi-step Stripe checkout flow.
+  3. 🍽️ **Fine Dining Restaurant** (`/demos/restaurant`) - Michelin-starred culinary atelier with categorized menu explorer, dietary filters, ingredient reveal lens (`BubbleReveal`), and real-time online table booking with seat availability.
+  4. 📈 **Enterprise SaaS** (`/demos/business`) - Cloud telemetry platform featuring a live simulated cluster metrics dashboard (throughput, error rates, p99 latency, anomaly injector & auto-remediation), annual ROI savings slider, and subscription checkout.
+  5. 📰 **Editorial Blog** (`/demos/blog`) - High-craft journal with real-time reading progress bar, topic filters, reader drawer, live reader comments submission, bookmarked reading list drawer, and newsletter dispatch.
+  6. 🏝️ **Retreat & Hospitality** (`/demos/booking`) - Private sanctuary villa reservation engine with date and guest filters, 3D villa cards, dynamic concierge add-ons (yacht, helicopter, private chef), and instant booking checkout.
+  7. 👥 **Creator Community** (`/demos/social`) - Community network with interactive post composer, comment thread drawers, creator profile modals, notifications center, and spring-animated likes.
+  8. 💬 **Chat & Messenger** (`/demos/chat`) - Sleek team messenger with channel switcher, custom channel creation, message reactions picker, presence status selector, file attachments, and AI assistant integration.
+- **Turnkey Mock & Live API Integration Engine**:
+  - Every demo website is immediately 100% functional in **Mock Mode** (realistic network latency, validated card/email checks, persisted browser storage).
+  - Simply open the floating **"API Setup & Integrations"** drawer in the corner of any page to toggle between **Mock Mode** and **Live API Mode** by entering your keys:
+    - **Stripe API** (`pk_live_...` / `sk_live_...`) for real checkout payments & subscriptions
+    - **OpenAI / Gemini API** (`sk-...`) for intelligent live conversational assistant responses
+    - **Resend / SendGrid API** (`re_...`) for live transactional email delivery
+    - **Supabase / Firebase** for cloud relational persistence
+  - Built-in **Outbox Inspector** lets you immediately view all dispatched confirmation emails, receipts, and order tickets generated during testing!
 - **Dynamic 5-Theme Engine**: Real-time palette and design token switching across all components and demos:
   - **Obsidian Amber** (Vehicular Media dark automotive luxury)
   - **Champagne Gold** (Fine dining, jewelry, luxury hospitality)
