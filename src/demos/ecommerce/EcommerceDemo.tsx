@@ -1,18 +1,5 @@
 import React, { useState } from "react";
 import confetti from "canvas-confetti";
-import {
-  Spotlight,
-  ThreeDCard,
-  CardContainer,
-  CardBody,
-  CardItem,
-  MovingBorderButton,
-  InfiniteMovingCards,
-  Magnetic,
-  GlassCard,
-  GlowingBadge,
-  TextReveal,
-} from "../../components";
 import { formatCurrency } from "../../lib/utils";
 import { processPayment } from "../../services/paymentService";
 import { sendEmail } from "../../services/emailService";
@@ -34,33 +21,59 @@ import {
   ArrowRight,
   Eye,
   CheckCircle2,
+  SlidersHorizontal,
+  LayoutGrid,
+  Columns,
+  Search,
+  Globe,
+  Tag,
+  Compass,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Product {
   id: string;
   name: string;
-  category: "outerwear" | "hardware" | "footwear";
-  price: number;
-  originalPrice?: number;
+  category: "outerwear" | "hardware" | "footwear" | "objects";
+  priceUSD: number;
+  originalPriceUSD?: number;
   tag?: string;
+  subtitle: string;
   description: string;
   longDescription: string;
   rating: number;
   reviewsCount: number;
-  imageGradient: string;
+  bgGradient: string;
+  material: string;
+  origin: string;
   specs: string[];
   sizes: string[];
   inStock: number;
 }
 
+const CURRENCIES = {
+  USD: { symbol: "$", rate: 1.0, label: "USD ($)" },
+  EUR: { symbol: "€", rate: 0.92, label: "EUR (€)" },
+  GBP: { symbol: "£", rate: 0.79, label: "GBP (£)" },
+  JPY: { symbol: "¥", rate: 154.0, label: "JPY (¥)" },
+};
+
+type CurrencyKey = keyof typeof CURRENCIES;
+
 export const EcommerceDemo: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCurrency, setActiveCurrency] = useState<CurrencyKey>("USD");
+  const [gridColumns, setGridColumns] = useState<2 | 3 | 4>(3);
+  const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
+
   const [cart, setCart] = useState<{ product: Product; quantity: number; size: string }[]>([]);
   const [wishlist, setWishlist] = useState<Set<string>>(new Set());
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productModalSize, setProductModalSize] = useState<string>("M");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Checkout Modal State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -71,140 +84,174 @@ export const EcommerceDemo: React.FC = () => {
   // Form Fields
   const [coupon, setCoupon] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
-  const [shippingName, setShippingName] = useState("Johnathan Vance");
-  const [shippingEmail, setShippingEmail] = useState("j.vance@kronosgear.com");
-  const [shippingAddress, setShippingAddress] = useState("742 Evergreen Terrace");
-  const [shippingCity, setShippingCity] = useState("Seattle");
-  const [shippingZip, setShippingZip] = useState("98101");
+  const [shippingName, setShippingName] = useState("Elena Rostova");
+  const [shippingEmail, setShippingEmail] = useState("elena.rostova@atelierkronos.com");
+  const [shippingAddress, setShippingAddress] = useState("48 Rue du Faubourg Saint-Honoré");
+  const [shippingCity, setShippingCity] = useState("Paris");
+  const [shippingZip, setShippingZip] = useState("75008");
   const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242");
-  const [cardExpiry, setCardExpiry] = useState("12/28");
-  const [cardCvv, setCardCvv] = useState("892");
+  const [cardExpiry, setCardExpiry] = useState("11/29");
+  const [cardCvv, setCardCvv] = useState("734");
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const products: Product[] = [
     {
       id: "prod-1",
-      name: "Aerovane Carbon Shell",
+      name: "Atelier Carbon Storm Anorak",
       category: "outerwear",
-      price: 480,
-      originalPrice: 550,
-      tag: "Best Seller",
+      priceUSD: 620,
+      originalPriceUSD: 750,
+      tag: "Capsule Core",
+      subtitle: "Laser-welded Japanese technical membrane",
       description: "Ultralight aerodynamic technical shell woven with carbon-reinforced waterproof ripstop.",
-      longDescription: "Engineered for gale-force conditions and sub-zero squalls. Features magnetic storm cuffs, laser-welded ventilation gills, and a hydrophobic silicone barrier tested up to 20,000mm hydrostatic head.",
+      longDescription: "Engineered for harsh maritime weather and urban winter squalls. Features magnetic storm cuffs, laser-welded ventilation gills, and a hydrophobic silicone barrier tested up to 25,000mm hydrostatic head.",
       rating: 4.9,
       reviewsCount: 142,
-      imageGradient: "from-amber-500/20 via-zinc-800 to-black",
-      specs: ["20,000mm Waterproof", "Carbon Weave", "Magnetic Zippers", "Reflective 3M Accents"],
-      sizes: ["S", "M", "L", "XL"],
-      inStock: 8,
+      bgGradient: "from-stone-800 via-stone-900 to-black",
+      material: "3-Layer GORE-TEX Pro & Recycled Carbon Strand",
+      origin: "Kobe, Japan",
+      specs: ["25,000mm Waterproof", "Carbon Weave", "Magnetic Zippers", "Reflective 3M Accents"],
+      sizes: ["XS", "S", "M", "L", "XL"],
+      inStock: 5,
     },
     {
       id: "prod-2",
-      name: "Chrono Kinetic Timepiece",
+      name: "Monolith Titanium Carabiner Pack",
       category: "hardware",
-      price: 890,
-      tag: "Limited Batch",
-      description: "Titanium grade 5 case with automatic mechanical movement and anti-reflective sapphire crystal.",
-      longDescription: "Machined from a single solid ingot of aerospace-grade titanium with an exposed exhibition sapphire caseback and unidirectional ceramic diving bezel.",
+      priceUSD: 145,
+      tag: "Artisan Forge",
+      subtitle: "Grade-5 aerospace billet titanium",
+      description: "CNC machined monolithic titanium carabiner with knurled twist-lock safety collar.",
+      longDescription: "Precision milled from a single block of aerospace-grade titanium alloy Ti-6Al-4V. Hand-finished with an acid-stone wash that resists saltwater oxidation and abrasive wear indefinitely.",
       rating: 5.0,
       reviewsCount: 88,
-      imageGradient: "from-indigo-600/20 via-zinc-800 to-black",
-      specs: ["Grade 5 Titanium", "100m Water Resistance", "Swiss Movement", "SuperLuminova BGW9"],
+      bgGradient: "from-zinc-700 via-zinc-800 to-zinc-950",
+      material: "Ti-6Al-4V Grade 5 Titanium",
+      origin: "Stockholm, Sweden",
+      specs: ["24kN Gate Rating", "Ultra-Lightweight (38g)", "Non-Magnetic", "Lifetime Guarantee"],
       sizes: ["One Size"],
-      inStock: 4,
+      inStock: 14,
     },
     {
       id: "prod-3",
-      name: "Vektor Minimalist Low",
+      name: "Strata Minimalist Trail Runner",
       category: "footwear",
-      price: 260,
-      description: "Ergonomic barefoot silhouette constructed from Italian calfskin with carbon stability plates.",
-      longDescription: "Anatomically zero-drop footbed engineered with dual-density Vibram rubber for extraordinary traction on wet asphalt and granite surfaces.",
+      priceUSD: 310,
+      originalPriceUSD: 360,
+      tag: "Low Stock",
+      subtitle: "Vibram Megagrip lugged sole with Kevlar knit",
+      description: "Engineered trail silhouette pairing bio-based Dyneema seamless upper with high-traction chassis.",
+      longDescription: "The intersection of mountain performance and architectural minimalism. Features a dual-density supercritical EVA midsole, speed-lace cable cinch, and zero unnecessary decorative overlays.",
       rating: 4.8,
-      reviewsCount: 95,
-      imageGradient: "from-emerald-500/20 via-zinc-800 to-black",
-      specs: ["Full Grain Leather", "Carbon Arch Shank", "Vibram Outsole", "Waxed Laces"],
-      sizes: ["40", "41", "42", "43", "44", "45"],
-      inStock: 12,
+      reviewsCount: 64,
+      bgGradient: "from-amber-900/60 via-stone-900 to-black",
+      material: "Dyneema Monofilament & Vibram Megagrip",
+      origin: "Montebelluna, Italy",
+      specs: ["Vibram Megagrip 4mm Lugs", "Dyneema Seamless Upper", "Quick-Cinch System", "240g Per Shoe"],
+      sizes: ["39", "40", "41", "42", "43", "44", "45"],
+      inStock: 3,
     },
     {
       id: "prod-4",
-      name: "Apex Thermal Modular Vest",
+      name: "Sculpted Cashmere Balaclava",
       category: "outerwear",
-      price: 320,
-      originalPrice: 380,
-      description: "Graphene-infused heat-retaining midlayer with modular magnetic cargo compartments.",
-      longDescription: "Ultrathin graphene micro-lattice traps radiated body heat while maintaining maximum breathable airflow under high-cardio exertion.",
-      rating: 4.7,
-      reviewsCount: 63,
-      imageGradient: "from-rose-500/20 via-zinc-800 to-black",
-      specs: ["Graphene Membrane", "Modular Fidlock", "Thermal Cell", "Packable Pocket"],
-      sizes: ["S", "M", "L", "XL"],
-      inStock: 15,
+      priceUSD: 195,
+      tag: "Winter Atelier",
+      subtitle: "100% Grade-A Mongolian cashmere",
+      description: "Seamless 7-gauge rib knit balaclava designed for insulating warmth and architectural drape.",
+      longDescription: "Spun from ethically sourced Mongolian mountain cashmere. Designed to be worn as a full hood during alpine travel or pulled down into a sculptural slouch collar in city commutes.",
+      rating: 4.9,
+      reviewsCount: 52,
+      bgGradient: "from-stone-700 via-neutral-900 to-black",
+      material: "100% Mongolian Raw Cashmere",
+      origin: "Biella, Italy",
+      specs: ["7-Gauge Heavy Rib", "Seamless 3D Tubular Knit", "Hydrophobic Wash", "Unisex Ergonomic Fit"],
+      sizes: ["S/M", "L/XL"],
+      inStock: 9,
     },
     {
       id: "prod-5",
-      name: "Spectre Polarized Optic",
+      name: "Vessel Minimalist Modular Tote",
       category: "hardware",
-      price: 240,
-      tag: "New",
-      description: "Laser-cut magnesium sunglasses with photochromic UV-reactive scratch-resistant lenses.",
-      longDescription: "Weighing a mere 18 grams, the Spectre frame is engineered from ultra-light magnesium alloy with anti-reflective hydrophobic coating on both lens faces.",
-      rating: 4.9,
-      reviewsCount: 51,
-      imageGradient: "from-cyan-500/20 via-zinc-800 to-black",
-      specs: ["Magnesium Frame", "100% UV400", "Ultra-feather 18g", "Titanium Screws"],
-      sizes: ["Standard"],
-      inStock: 19,
+      priceUSD: 380,
+      tag: "New Arrival",
+      subtitle: "Cordura 500D Ballistic with Cobra Buckles",
+      description: "Weatherproof modular carryall with padded 16\" laptop hammock and Fidlock magnetic attachments.",
+      longDescription: "Constructed from military-specification waterproof Cordura nylon. Equipped with Austrian AustriAlpin Cobra quick-release aluminum buckles and a hidden passport slip pocket.",
+      rating: 4.7,
+      reviewsCount: 41,
+      bgGradient: "from-emerald-950/40 via-stone-900 to-black",
+      material: "Cordura 500D & Fidlock V-Buckles",
+      origin: "Kyoto, Japan",
+      specs: ["28L Expandable Volume", "16\" Suspended Laptop Sleeve", "Waterproof YKK Aquaguard", "Modular MOLLE System"],
+      sizes: ["One Size"],
+      inStock: 7,
     },
     {
       id: "prod-6",
-      name: "Nomad Roll-Top Commuter",
-      category: "hardware",
-      price: 290,
-      description: "Weatherproof 28L technical commuter pack with padded laptop cocoon and quick-draw side harness.",
-      longDescription: "Constructed from laminated X-Pac VX21 sailcloth featuring Fidlock magnetic hardware, weatherproof taped zippers, and ergonomic load-lifter straps.",
-      rating: 4.8,
-      reviewsCount: 110,
-      imageGradient: "from-amber-600/20 via-zinc-800 to-black",
-      specs: ["X-Pac Sailcloth", "Waterproof YKK", "Fidlock Closure", "16-inch Laptop Sleeve"],
-      sizes: ["28 Liters"],
+      name: "Kuro Obsidian Incense Chamber",
+      category: "objects",
+      priceUSD: 240,
+      tag: "Object d'Art",
+      subtitle: "Hand-carved volcanic basalt & brass",
+      description: "Monolithic incense burner sculpted from raw volcanic basalt stone with solid turned brass lid.",
+      longDescription: "Each piece is hand-hewn from volcanic basalt quarries in Nagano. Features precision micro-drilled smoke dissipation channels that allow aromatic ribbons to coil gracefully in tranquil currents.",
+      rating: 5.0,
+      reviewsCount: 29,
+      bgGradient: "from-stone-900 via-stone-950 to-black",
+      material: "Natural Volcanic Basalt & Solid Raw Brass",
+      origin: "Nagano, Japan",
+      specs: ["Hand-Carved Basalt", "Solid Brass Diffuser Ring", "Weight: 1.8kg", "Includes 30 Cedar Cones"],
+      sizes: ["One Size"],
       inStock: 6,
     },
   ];
 
-  const filteredProducts =
-    selectedCategory === "all"
-      ? products
-      : products.filter((p) => p.category === selectedCategory);
-
-  const toggleWishlist = (id: string, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setWishlist((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const convertPrice = (usd: number): string => {
+    const cur = CURRENCIES[activeCurrency];
+    const val = usd * cur.rate;
+    if (activeCurrency === "JPY") {
+      return `${cur.symbol}${Math.round(val).toLocaleString()}`;
+    }
+    return `${cur.symbol}${val.toFixed(0)}`;
   };
 
-  const addToCart = (product: Product, size = "M") => {
+  const filteredProducts = products
+    .filter((p) => {
+      const matchesCategory = selectedCategory === "all" || p.category === selectedCategory;
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.material.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === "price-asc") return a.priceUSD - b.priceUSD;
+      if (sortBy === "price-desc") return b.priceUSD - a.priceUSD;
+      if (sortBy === "rating") return b.rating - a.rating;
+      return 0;
+    });
+
+  const addToCart = (product: Product, size: string = "M", quantity: number = 1) => {
     setCart((prev) => {
-      const existing = prev.find(
-        (item) => item.product.id === product.id && item.size === size
-      );
+      const existing = prev.find((item) => item.product.id === product.id && item.size === size);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id && item.size === size
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
-      return [...prev, { product, quantity: 1, size }];
+      return [...prev, { product, quantity, size }];
     });
-    setIsCartOpen(true);
+    showToast(`Added ${product.name} (${size}) to your bag.`);
   };
 
-  const updateQuantity = (id: string, size: string, delta: number) => {
+  const updateCartQty = (id: string, size: string, delta: number) => {
     setCart((prev) =>
       prev
         .map((item) => {
@@ -218,23 +265,35 @@ export const EcommerceDemo: React.FC = () => {
     );
   };
 
-  const removeFromCart = (id: string, size: string) => {
-    setCart((prev) => prev.filter((item) => !(item.product.id === id && item.size === size)));
+  const toggleWishlist = (id: string) => {
+    setWishlist((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        showToast("Removed from wishlist.");
+      } else {
+        next.add(id);
+        showToast("Saved to wishlist.");
+      }
+      return next;
+    });
   };
 
-  const cartTotal = cart.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
-
-  const discount = couponApplied ? cartTotal * 0.2 : 0;
-  const finalTotal = cartTotal - discount;
+  const rawSubtotalUSD = cart.reduce((sum, item) => sum + item.product.priceUSD * item.quantity, 0);
+  const discountUSD = couponApplied ? rawSubtotalUSD * 0.2 : 0;
+  const shippingUSD = rawSubtotalUSD > 250 || cart.length === 0 ? 0 : 25;
+  const finalTotalUSD = rawSubtotalUSD - discountUSD + shippingUSD;
   const totalItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const freeShippingThresholdUSD = 250;
+  const freeShippingRemaining = Math.max(0, freeShippingThresholdUSD - rawSubtotalUSD);
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
     if (coupon.trim().toUpperCase() === "WELCOME20") {
       setCouponApplied(true);
+      showToast("20% Atelier discount applied!");
+    } else {
+      showToast("Invalid code. Try code: WELCOME20");
     }
   };
 
@@ -248,35 +307,36 @@ export const EcommerceDemo: React.FC = () => {
         cardHolder: shippingName,
         expiry: cardExpiry,
         cvv: cardCvv,
-        amount: finalTotal,
-        description: `Kronos Apparel Order (${totalItemCount} items)`,
+        amount: finalTotalUSD,
+        currency: activeCurrency,
+        description: `Atelier Kronos Order (${totalItemCount} items)`,
         customerEmail: shippingEmail,
       });
 
-      // Dispatch order receipt email via mock email service
       await sendEmail({
         to: shippingEmail,
-        subject: `Order Receipt Confirmed: ${paymentResult.chargeId}`,
+        subject: `Atelier Kronos Order Dispatch Confirmed: #${paymentResult.chargeId.slice(-6).toUpperCase()}`,
         template: "order_confirmation",
         data: {
           customerName: shippingName,
           shippingAddress: `${shippingAddress}, ${shippingCity} ${shippingZip}`,
-          amountPaid: `$${finalTotal.toFixed(2)}`,
+          amountPaid: convertPrice(finalTotalUSD),
           chargeId: paymentResult.chargeId,
           last4: paymentResult.last4,
-          items: cart.map((i) => `${i.product.name} (x${i.quantity}) - $${i.product.price * i.quantity}`),
+          items: cart.map((i) => `${i.product.name} (${i.size}) x${i.quantity} — ${convertPrice(i.product.priceUSD * i.quantity)}`),
         },
       });
 
       confetti({
-        particleCount: 130,
-        spread: 80,
+        particleCount: 100,
+        spread: 70,
         origin: { y: 0.6 },
+        colors: ["#C5A880", "#1C1917", "#78716C", "#E8E3D9"],
       });
 
       setCompletedOrder({
         chargeId: paymentResult.chargeId,
-        total: finalTotal,
+        totalUSD: finalTotalUSD,
         itemsCount: totalItemCount,
         email: shippingEmail,
         isMock: paymentResult.isMock,
@@ -292,67 +352,218 @@ export const EcommerceDemo: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0c0e] text-white">
-      {/* Sticky Cart & Wishlist Trigger */}
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
-        <Magnetic strength={0.3}>
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-3 px-5 py-3.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm shadow-2xl shadow-amber-500/30 transition-transform active:scale-95"
+    <div className="min-h-screen bg-[#FBF9F5] text-[#1C1917] font-sans selection:bg-[#C5A880]/30 selection:text-[#1C1917]">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1C1917] text-[#FBF9F5] px-5 py-2.5 rounded-full text-xs font-mono tracking-wider shadow-2xl flex items-center gap-2 border border-stone-700"
           >
-            <ShoppingBag size={18} />
-            <span>Bag</span>
-            {totalItemCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-zinc-950 text-amber-400 text-xs flex items-center justify-center font-mono">
-                {totalItemCount}
-              </span>
-            )}
-          </button>
-        </Magnetic>
+            <Sparkles size={13} className="text-[#C5A880]" />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Editorial Announcement Bar */}
+      <div className="bg-[#1C1917] text-[#E8E3D9] text-[11px] font-mono tracking-widest px-4 sm:px-8 py-2.5 flex items-center justify-between border-b border-stone-800">
+        <div className="hidden sm:flex items-center gap-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#C5A880] animate-pulse" />
+          <span>AUTUMN ATELIER 2026 // MONOLITH COLLECTION</span>
+        </div>
+        <div className="text-center flex-1 sm:flex-initial">
+          <span>COMPLIMENTARY WORLDWIDE COURIER OVER $250 · CODE: <strong className="text-[#C5A880]">WELCOME20</strong></span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Globe size={12} className="text-[#C5A880]" />
+          <div className="flex items-center gap-1.5">
+            {(Object.keys(CURRENCIES) as CurrencyKey[]).map((cur) => (
+              <button
+                key={cur}
+                onClick={() => setActiveCurrency(cur)}
+                className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
+                  activeCurrency === cur
+                    ? "bg-[#C5A880] text-[#1C1917] font-bold"
+                    : "text-stone-400 hover:text-white"
+                }`}
+              >
+                {cur}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Hero Banner */}
-      <section className="relative py-20 px-6 text-center border-b border-white/10 bg-gradient-to-b from-zinc-900/60 to-zinc-950/90 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(245,158,11,0.12),transparent_70%)] pointer-events-none" />
-
-        <div className="relative z-10 max-w-4xl mx-auto space-y-6">
-          <GlowingBadge variant="amber">2026 CAPSULE COLLECTION · TURNKEY COMMERCE</GlowingBadge>
-          <h1 className="text-4xl sm:text-6xl font-extrabold font-display tracking-tight">
-            Engineered Gear for the{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500">
-              <TextReveal text="Next Century." />
+      {/* Boutique Header */}
+      <header className="sticky top-0 z-40 bg-[#FBF9F5]/90 backdrop-blur-md border-b border-[#E8E3D9] transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-baseline gap-2">
+            <h1 className="font-serif text-2xl sm:text-3xl tracking-tight text-[#1C1917] font-normal italic">
+              Atelier Kronos
+            </h1>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#78716C] hidden md:inline">
+              Est. 2026
             </span>
-          </h1>
-          <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto">
-            Technical garments and precision hardware developed with aerodynamic materials, integrated checkout flows, and zero compromise.
-          </p>
+          </div>
 
-          <div className="pt-2 flex justify-center">
-            <span className="text-xs font-mono text-zinc-400 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10">
-              Promo Code: <strong className="text-amber-400">WELCOME20</strong> for 20% discount at checkout
-            </span>
+          {/* Search Bar */}
+          <div className="hidden md:flex items-center flex-1 max-w-sm mx-6">
+            <div className="relative w-full">
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search archive, garments, materials..."
+                className="w-full bg-[#F3EFE6] text-xs text-[#1C1917] placeholder:text-stone-400 pl-9 pr-4 py-2 rounded-full border border-stone-200 focus:outline-none focus:border-[#C5A880] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsWishlistOpen(true)}
+              className="relative p-2.5 rounded-full hover:bg-[#F3EFE6] text-stone-700 transition-colors"
+              title="Saved Wishlist"
+            >
+              <Heart size={18} className={wishlist.size > 0 ? "fill-[#BF573F] text-[#BF573F]" : ""} />
+              {wishlist.size > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#BF573F] text-white text-[9px] flex items-center justify-center font-mono">
+                  {wishlist.size}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#FBF9F5] text-xs font-mono tracking-wider transition-all shadow-sm active:scale-95"
+            >
+              <ShoppingBag size={14} className="text-[#C5A880]" />
+              <span className="font-semibold">Bag</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-[#C5A880] text-[#1C1917] text-[10px] font-bold">
+                {totalItemCount}
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Editorial Lookbook Hero */}
+      <section className="border-b border-[#E8E3D9] overflow-hidden bg-gradient-to-b from-[#F5F1E8] to-[#FBF9F5]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 sm:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          {/* Left Editorial Copy */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 text-[11px] font-mono tracking-widest text-[#78716C] uppercase bg-[#EAE5DB] px-3 py-1 rounded-full border border-stone-300">
+              <span>Lookbook Edition 04</span>
+              <span className="text-[#C5A880]">•</span>
+              <span>Sub-Zero Ergonomics</span>
+            </div>
+
+            <h2 className="font-serif text-4xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-[#1C1917]">
+              Sculpted Form & <br />
+              <span className="italic font-normal text-stone-600">Monolithic Utility.</span>
+            </h2>
+
+            <p className="text-stone-600 text-sm sm:text-base leading-relaxed max-w-xl font-light">
+              Crafted in collaboration with Japanese carbon weavers and Alpine mountain guides. Every seam is laser-welded with hydrophobic precision, stripping away excess to expose pure structural function.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <button
+                onClick={() => {
+                  const el = document.getElementById("catalog-grid");
+                  el?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="px-6 py-3.5 rounded-full bg-[#1C1917] text-[#FBF9F5] hover:bg-stone-800 text-xs font-mono tracking-wider flex items-center gap-3 transition-transform active:scale-95 shadow-md"
+              >
+                <span>View Autumn Catalog</span>
+                <ArrowRight size={14} className="text-[#C5A880]" />
+              </button>
+
+              <div className="flex items-center gap-2 text-xs font-mono text-stone-500 px-3 py-2 border-l border-stone-300">
+                <Tag size={13} className="text-[#C5A880]" />
+                <span>20% off with promo code <strong>WELCOME20</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Lookbook Showcase Card */}
+          <div className="lg:col-span-5 relative">
+            <div className="relative rounded-2xl bg-gradient-to-br from-[#1C1917] to-stone-900 text-stone-100 p-8 shadow-2xl border border-stone-800 overflow-hidden group">
+              <div className="absolute top-4 right-4 text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/10 text-[#C5A880]">
+                Featured Capsule
+              </div>
+
+              {/* Minimalist Graphic Representation */}
+              <div className="h-64 sm:h-72 w-full rounded-xl bg-gradient-to-tr from-stone-800/80 to-stone-950 flex flex-col justify-center items-center relative overflow-hidden my-4 border border-stone-700/50">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(197,168,128,0.15),transparent_70%)]" />
+                <div className="relative text-center p-6 space-y-2">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-[#C5A880]/20 border border-[#C5A880]/40 flex items-center justify-center text-[#C5A880] mb-3">
+                    <Compass size={28} />
+                  </div>
+                  <span className="text-[10px] font-mono tracking-widest text-[#C5A880] uppercase">
+                    Ref. No. AT-094
+                  </span>
+                  <h3 className="font-serif text-2xl font-light text-white">
+                    Carbon Storm Anorak
+                  </h3>
+                  <p className="text-xs text-stone-400 font-mono">
+                    25,000mm Hydrostatic · Kobe Japan
+                  </p>
+                </div>
+
+                {/* Hotspot Button */}
+                <button
+                  onClick={() => addToCart(products[0], "M")}
+                  className="absolute bottom-4 right-4 px-4 py-2 rounded-full bg-[#C5A880] hover:bg-[#d6ba94] text-stone-950 text-xs font-mono font-bold tracking-wider flex items-center gap-1.5 transition-transform active:scale-95 shadow-lg"
+                >
+                  <Plus size={12} />
+                  <span>Quick Add · {convertPrice(products[0].priceUSD)}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-stone-400 font-mono pt-2 border-t border-stone-800">
+                <span>Material: 3-Layer GORE-TEX Pro</span>
+                <span className="text-[#C5A880]">Stock: 5 left</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Store Catalog */}
-      <section className="py-16 px-6 max-w-7xl mx-auto">
-        {/* Category Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-12 pb-6 border-b border-white/10">
-          <div className="flex items-center gap-2">
+      {/* Main Catalog View */}
+      <section id="catalog-grid" className="max-w-7xl mx-auto px-4 sm:px-8 py-12">
+        {/* Filter & Viewport Controls */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#E8E3D9] mb-8">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0">
             {[
-              { id: "all", label: "All Products" },
+              { id: "all", label: "All Items" },
               { id: "outerwear", label: "Outerwear" },
               { id: "hardware", label: "Hardware" },
               { id: "footwear", label: "Footwear" },
+              { id: "objects", label: "Objects" },
             ].map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                className={`px-4 py-2 rounded-full text-xs font-mono tracking-wider transition-all whitespace-nowrap ${
                   selectedCategory === cat.id
-                    ? "bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20"
-                    : "bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10"
+                    ? "bg-[#1C1917] text-[#FBF9F5] shadow-sm font-semibold"
+                    : "bg-[#F3EFE6] text-stone-600 hover:text-stone-900 hover:bg-[#EAE5DB]"
                 }`}
               >
                 {cat.label}
@@ -360,178 +571,114 @@ export const EcommerceDemo: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-4 text-xs text-zinc-400 font-mono">
-            <span>Wishlist ({wishlist.size})</span>
-            <span>·</span>
-            <span>{filteredProducts.length} Products</span>
+          {/* Sort & Grid Layout */}
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <div className="flex items-center gap-2 text-stone-600">
+              <SlidersHorizontal size={14} />
+              <select
+                value={sortBy}
+                onChange={(e: any) => setSortBy(e.target.value)}
+                className="bg-[#F3EFE6] border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-[#C5A880]"
+              >
+                <option value="featured">Featured Archive</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-1 border-l border-stone-300 pl-4">
+              <button
+                onClick={() => setGridColumns(2)}
+                className={`p-1.5 rounded transition-colors ${
+                  gridColumns === 2 ? "bg-[#1C1917] text-white" : "text-stone-400 hover:text-stone-700"
+                }`}
+                title="2-Column Editorial View"
+              >
+                <Columns size={15} />
+              </button>
+              <button
+                onClick={() => setGridColumns(3)}
+                className={`p-1.5 rounded transition-colors ${
+                  gridColumns === 3 ? "bg-[#1C1917] text-white" : "text-stone-400 hover:text-stone-700"
+                }`}
+                title="3-Column Balanced View"
+              >
+                <LayoutGrid size={15} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Product Grid with Spotlight & 3D Items */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product) => {
-            const isWishlisted = wishlist.has(product.id);
-            return (
-              <Spotlight
-                key={product.id}
-                onClick={() => {
-                  setSelectedProduct(product);
-                  setProductModalSize(product.sizes[0] || "M");
-                }}
-                className="p-6 h-full flex flex-col justify-between group cursor-pointer"
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    {product.tag ? (
-                      <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        {product.tag}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-mono text-zinc-500 capitalize">
-                        {product.category}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-1 text-xs text-amber-400">
-                      <Star size={13} fill="currentColor" />
-                      <span>{product.rating}</span>
-                      <span className="text-zinc-500">({product.reviewsCount})</span>
-                    </div>
-                  </div>
-
-                  {/* Product simulated visual canvas */}
-                  <div className={`h-48 w-full rounded-xl bg-gradient-to-tr ${product.imageGradient} border border-white/10 flex items-center justify-center p-6 relative overflow-hidden mb-6 group-hover:scale-[1.02] transition-transform`}>
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/15 flex items-center justify-center text-white/80 backdrop-blur-md shadow-xl">
-                      <ShoppingBag size={28} />
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <button
-                        onClick={(e) => toggleWishlist(product.id, e)}
-                        className={`p-2 rounded-full border transition-colors ${
-                          isWishlisted
-                            ? "bg-rose-500 text-white border-rose-500"
-                            : "bg-black/40 hover:bg-black/80 text-zinc-400 hover:text-rose-400 border-white/10"
-                        }`}
-                        aria-label="Save to wishlist"
-                      >
-                        <Heart size={14} fill={isWishlisted ? "currentColor" : "none"} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-lg font-bold font-display text-white mb-1.5 group-hover:text-amber-200 transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-                    {product.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1.5 mb-6">
-                    {product.specs.slice(0, 3).map((spec, i) => (
-                      <span
-                        key={i}
-                        className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-zinc-400 font-mono"
-                      >
-                        {spec}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                  <div>
-                    <div className="text-lg font-bold font-display text-white">
-                      {formatCurrency(product.price)}
-                    </div>
-                    {product.originalPrice && (
-                      <div className="text-xs text-zinc-500 line-through">
-                        {formatCurrency(product.originalPrice)}
-                      </div>
-                    )}
-                  </div>
-
-                  <Magnetic strength={0.2}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToCart(product, product.sizes[0] || "M");
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-amber-500 hover:text-zinc-950 text-white font-semibold text-xs border border-white/15 transition-all"
-                    >
-                      <Plus size={14} />
-                      <span>Add to Bag</span>
-                    </button>
-                  </Magnetic>
-                </div>
-              </Spotlight>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Product Detail Modal */}
-      <AnimatePresence>
-        {selectedProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-3xl bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-10 shadow-2xl relative my-8"
+        {/* Product Grid */}
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-20 bg-[#F3EFE6] rounded-2xl border border-[#E8E3D9]">
+            <p className="font-serif text-xl text-stone-600 italic">No pieces found matching your filter.</p>
+            <button
+              onClick={() => {
+                setSelectedCategory("all");
+                setSearchQuery("");
+              }}
+              className="mt-4 px-4 py-2 rounded-full bg-[#1C1917] text-white text-xs font-mono"
             >
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
-              >
-                <X size={18} />
-              </button>
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div
+            className={`grid gap-8 ${
+              gridColumns === 2
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+            }`}
+          >
+            {filteredProducts.map((prod) => {
+              const isWishlisted = wishlist.has(prod.id);
+              return (
+                <div
+                  key={prod.id}
+                  className="group bg-white rounded-2xl border border-[#EAE5DB] hover:border-stone-400 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden"
+                >
+                  {/* Image Presentation Box */}
+                  <div className="relative aspect-[4/3] bg-[#F5F2EB] flex items-center justify-center p-8 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
-                <div className={`h-72 w-full rounded-2xl bg-gradient-to-tr ${selectedProduct.imageGradient} border border-white/10 flex items-center justify-center p-6 relative overflow-hidden`}>
-                  <ShoppingBag size={48} className="text-white/60" />
-                  <div className="absolute bottom-4 left-4 text-xs font-mono text-amber-300">
-                    {selectedProduct.inStock} units remaining
-                  </div>
-                </div>
+                    {/* Tag badge */}
+                    {prod.tag && (
+                      <span className="absolute top-4 left-4 text-[10px] font-mono tracking-wider uppercase px-2.5 py-1 rounded-full bg-[#1C1917] text-[#FBF9F5]">
+                        {prod.tag}
+                      </span>
+                    )}
 
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-amber-400 uppercase tracking-wider">
-                      {selectedProduct.category}
-                    </span>
-                    <div className="flex items-center gap-1 text-xs text-amber-400">
-                      <Star size={13} fill="currentColor" />
-                      <span>{selectedProduct.rating}</span>
+                    {/* Wishlist toggle */}
+                    <button
+                      onClick={() => toggleWishlist(prod.id)}
+                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 backdrop-blur hover:bg-white text-stone-700 shadow-sm transition-transform active:scale-90"
+                    >
+                      <Heart
+                        size={15}
+                        className={isWishlisted ? "fill-[#BF573F] text-[#BF573F]" : ""}
+                      />
+                    </button>
+
+                    {/* Graphical Product Presentation */}
+                    <div className="text-center space-y-2 transform group-hover:scale-105 transition-transform duration-500">
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-stone-800 to-black text-[#C5A880] flex items-center justify-center shadow-lg border border-stone-700">
+                        <ShoppingBag size={32} />
+                      </div>
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-stone-500">
+                        {prod.origin}
+                      </p>
                     </div>
-                  </div>
 
-                  <h2 className="text-2xl font-bold font-display text-white">
-                    {selectedProduct.name}
-                  </h2>
-
-                  <div className="text-2xl font-mono font-bold text-amber-400">
-                    {formatCurrency(selectedProduct.price)}
-                  </div>
-
-                  <p className="text-xs text-zinc-300 leading-relaxed">
-                    {selectedProduct.longDescription}
-                  </p>
-
-                  {/* Size selection */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-400 mb-2">
-                      Select Size
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProduct.sizes.map((s) => (
+                    {/* Hover Quick Size Bar */}
+                    <div className="absolute inset-x-4 bottom-4 translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-1.5 bg-[#1C1917]/95 backdrop-blur-md p-2 rounded-xl text-white">
+                      <span className="text-[10px] font-mono text-stone-400 mr-1">Quick Size:</span>
+                      {prod.sizes.slice(0, 4).map((s) => (
                         <button
                           key={s}
-                          type="button"
-                          onClick={() => setProductModalSize(s)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold border transition-all ${
-                            productModalSize === s
-                              ? "bg-amber-500 text-zinc-950 border-amber-500"
-                              : "bg-white/5 border-white/10 text-zinc-300 hover:text-white"
-                          }`}
+                          onClick={() => addToCart(prod, s)}
+                          className="px-2 py-1 rounded bg-white/10 hover:bg-[#C5A880] hover:text-[#1C1917] text-[10px] font-mono font-bold transition-colors"
                         >
                           {s}
                         </button>
@@ -539,25 +686,59 @@ export const EcommerceDemo: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-4 flex gap-3">
-                    <button
-                      onClick={() => {
-                        addToCart(selectedProduct, productModalSize);
-                        setSelectedProduct(null);
-                      }}
-                      className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20"
-                    >
-                      Add to Bag · {formatCurrency(selectedProduct.price)}
-                    </button>
+                  {/* Card Content */}
+                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] font-mono text-stone-500 mb-1">
+                        <span>{prod.category.toUpperCase()}</span>
+                        <div className="flex items-center gap-1 text-[#C5A880]">
+                          <Star size={12} className="fill-[#C5A880]" />
+                          <span>{prod.rating.toFixed(1)}</span>
+                          <span className="text-stone-400">({prod.reviewsCount})</span>
+                        </div>
+                      </div>
+
+                      <h3
+                        onClick={() => setSelectedProduct(prod)}
+                        className="font-serif text-lg font-medium text-[#1C1917] hover:text-[#C5A880] cursor-pointer transition-colors"
+                      >
+                        {prod.name}
+                      </h3>
+
+                      <p className="text-xs text-stone-500 mt-1 line-clamp-2 font-light">
+                        {prod.subtitle}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#F0EBE0] flex items-center justify-between">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-mono font-bold text-base text-[#1C1917]">
+                          {convertPrice(prod.priceUSD)}
+                        </span>
+                        {prod.originalPriceUSD && (
+                          <span className="text-xs font-mono text-stone-400 line-through">
+                            {convertPrice(prod.originalPriceUSD)}
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedProduct(prod)}
+                        className="p-2 rounded-full hover:bg-[#F3EFE6] text-stone-600 transition-colors"
+                        title="View Details"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              );
+            })}
           </div>
         )}
-      </AnimatePresence>
+      </section>
 
-      {/* Slide-out Shopping Bag Drawer */}
+      {/* Slide-out Cart Drawer */}
       <AnimatePresence>
         {isCartOpen && (
           <div className="fixed inset-0 z-50 overflow-hidden">
@@ -566,316 +747,537 @@ export const EcommerceDemo: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsCartOpen(false)}
-              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             />
 
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute inset-y-0 right-0 max-w-full flex pl-10"
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#FBF9F5] shadow-2xl flex flex-col border-l border-[#E8E3D9]"
             >
-              <div className="w-screen max-w-md bg-zinc-950 border-l border-white/10 p-6 flex flex-col justify-between shadow-2xl">
-                <div>
-                  <div className="flex items-center justify-between pb-6 border-b border-white/10">
-                    <div className="flex items-center gap-2">
-                      <ShoppingBag size={20} className="text-amber-400" />
-                      <h3 className="font-bold font-display text-lg text-white">
-                        Your Bag ({totalItemCount})
-                      </h3>
+              {/* Drawer Header */}
+              <div className="p-6 border-b border-[#E8E3D9] flex items-center justify-between bg-[#F5F1E8]">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag size={18} className="text-[#C5A880]" />
+                  <h3 className="font-serif text-xl text-[#1C1917]">Shopping Bag</h3>
+                  <span className="text-xs font-mono text-stone-500">({totalItemCount} items)</span>
+                </div>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-stone-200 text-stone-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Free Courier Bar */}
+              <div className="px-6 py-3 bg-[#EAE5DB] text-[11px] font-mono text-stone-700">
+                {freeShippingRemaining > 0 ? (
+                  <div>
+                    <span>Add <strong>{convertPrice(freeShippingRemaining)}</strong> more for complimentary courier.</span>
+                    <div className="w-full bg-stone-300 h-1.5 rounded-full mt-2 overflow-hidden">
+                      <div
+                        className="bg-[#C5A880] h-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, (rawSubtotalUSD / freeShippingThresholdUSD) * 100)}%` }}
+                      />
                     </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-emerald-800 font-bold">
+                    <CheckCircle2 size={13} />
+                    <span>Complimentary Express Courier Unlocked</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart Items List */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {cart.length === 0 ? (
+                  <div className="text-center py-24 space-y-3">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-[#EAE5DB] flex items-center justify-center text-stone-500">
+                      <ShoppingBag size={20} />
+                    </div>
+                    <p className="font-serif text-stone-600 italic">Your bag is currently empty.</p>
                     <button
                       onClick={() => setIsCartOpen(false)}
-                      className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
-                      aria-label="Close bag"
+                      className="text-xs font-mono text-[#C5A880] underline hover:text-stone-900"
                     >
-                      <X size={18} />
+                      Explore Curated Collection
+                    </button>
+                  </div>
+                ) : (
+                  cart.map((item, idx) => (
+                    <div
+                      key={`${item.product.id}-${item.size}-${idx}`}
+                      className="p-4 rounded-xl bg-white border border-[#E8E3D9] flex gap-4"
+                    >
+                      <div className="w-16 h-16 rounded-lg bg-[#F5F1E8] flex items-center justify-center text-stone-600 font-mono text-xs font-bold border border-stone-200">
+                        {item.size}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <h4 className="font-serif text-sm text-[#1C1917] font-medium leading-tight">
+                            {item.product.name}
+                          </h4>
+                          <button
+                            onClick={() => updateCartQty(item.product.id, item.size, -item.quantity)}
+                            className="text-stone-400 hover:text-red-600"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        <p className="text-[11px] font-mono text-stone-500 mt-0.5">
+                          Size: {item.size} · {convertPrice(item.product.priceUSD)}
+                        </p>
+
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden bg-[#FBF9F5]">
+                            <button
+                              onClick={() => updateCartQty(item.product.id, item.size, -1)}
+                              className="px-2 py-1 text-stone-600 hover:bg-stone-200"
+                            >
+                              <Minus size={11} />
+                            </button>
+                            <span className="px-2 font-mono text-xs">{item.quantity}</span>
+                            <button
+                              onClick={() => updateCartQty(item.product.id, item.size, 1)}
+                              className="px-2 py-1 text-stone-600 hover:bg-stone-200"
+                            >
+                              <Plus size={11} />
+                            </button>
+                          </div>
+
+                          <span className="font-mono font-bold text-xs text-[#1C1917]">
+                            {convertPrice(item.product.priceUSD * item.quantity)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Drawer Footer / Checkout CTA */}
+              {cart.length > 0 && (
+                <div className="p-6 border-t border-[#E8E3D9] bg-[#F5F1E8] space-y-4">
+                  {/* Coupon Field */}
+                  <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={coupon}
+                      onChange={(e) => setCoupon(e.target.value)}
+                      placeholder="Promo Code (WELCOME20)"
+                      className="flex-1 px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs font-mono uppercase focus:outline-none focus:border-[#C5A880]"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-2 bg-[#1C1917] text-white rounded-lg text-xs font-mono"
+                    >
+                      Apply
+                    </button>
+                  </form>
+
+                  <div className="space-y-1.5 text-xs font-mono text-stone-600">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span>{convertPrice(rawSubtotalUSD)}</span>
+                    </div>
+                    {couponApplied && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>20% Welcome Code</span>
+                        <span>-{convertPrice(discountUSD)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Courier Shipping</span>
+                      <span>{shippingUSD === 0 ? "FREE" : convertPrice(shippingUSD)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-sm text-[#1C1917] pt-2 border-t border-stone-300">
+                      <span>Estimated Total</span>
+                      <span>{convertPrice(finalTotalUSD)}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      setIsCheckoutOpen(true);
+                      setCheckoutStep("shipping");
+                    }}
+                    className="w-full py-3.5 rounded-full bg-[#1C1917] hover:bg-stone-800 text-[#FBF9F5] text-xs font-mono tracking-wider font-semibold transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Lock size={14} className="text-[#C5A880]" />
+                    <span>Proceed to Secure Checkout</span>
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Product Detail Modal */}
+      <AnimatePresence>
+        {selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProduct(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-3xl bg-[#FBF9F5] rounded-2xl shadow-2xl overflow-hidden border border-[#E8E3D9] z-10 max-h-[90vh] flex flex-col md:flex-row"
+            >
+              {/* Left Image / Aesthetic */}
+              <div className="md:w-1/2 bg-[#1C1917] p-8 text-stone-100 flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-[#C5A880] px-2.5 py-1 rounded bg-white/10">
+                    {selectedProduct.category}
+                  </span>
+                  <button
+                    onClick={() => toggleWishlist(selectedProduct.id)}
+                    className="p-2 rounded-full bg-white/10 text-stone-200 hover:text-white"
+                  >
+                    <Heart
+                      size={16}
+                      className={wishlist.has(selectedProduct.id) ? "fill-[#BF573F] text-[#BF573F]" : ""}
+                    />
+                  </button>
+                </div>
+
+                <div className="py-12 text-center space-y-4">
+                  <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-tr from-stone-800 to-black border border-stone-700 flex items-center justify-center text-[#C5A880] shadow-2xl">
+                    <ShoppingBag size={40} />
+                  </div>
+                  <h4 className="font-serif text-2xl font-light text-white">
+                    {selectedProduct.name}
+                  </h4>
+                  <p className="text-xs font-mono text-[#C5A880]">
+                    Origin: {selectedProduct.origin}
+                  </p>
+                </div>
+
+                <div className="text-[11px] font-mono text-stone-400 space-y-1">
+                  <p>Material: {selectedProduct.material}</p>
+                  <p>Availability: {selectedProduct.inStock} pieces remaining</p>
+                </div>
+              </div>
+
+              {/* Right Information & Buy Section */}
+              <div className="md:w-1/2 p-8 flex flex-col justify-between space-y-6 overflow-y-auto">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-serif text-2xl text-[#1C1917] font-semibold">
+                        {selectedProduct.name}
+                      </h3>
+                      <p className="text-sm font-mono text-[#C5A880] font-bold mt-1">
+                        {convertPrice(selectedProduct.priceUSD)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedProduct(null)}
+                      className="p-1 rounded-full text-stone-400 hover:text-stone-800"
+                    >
+                      <X size={20} />
                     </button>
                   </div>
 
-                  {/* Cart Item List */}
-                  <div className="mt-6 space-y-4 max-h-[50vh] overflow-y-auto pr-1">
-                    {cart.length === 0 ? (
-                      <div className="py-12 text-center space-y-3">
-                        <div className="w-12 h-12 mx-auto rounded-full bg-white/5 flex items-center justify-center text-zinc-500">
-                          <ShoppingBag size={20} />
-                        </div>
-                        <p className="text-sm text-zinc-400">Your bag is empty.</p>
-                      </div>
-                    ) : (
-                      cart.map((item) => (
-                        <div
-                          key={`${item.product.id}-${item.size}`}
-                          className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/5"
+                  <p className="text-xs text-stone-600 leading-relaxed">
+                    {selectedProduct.longDescription}
+                  </p>
+
+                  {/* Specs List */}
+                  <div className="pt-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 block mb-2">
+                      Technical Highlights
+                    </span>
+                    <ul className="grid grid-cols-2 gap-2 text-xs font-mono text-stone-700">
+                      {selectedProduct.specs.map((s) => (
+                        <li key={s} className="flex items-center gap-1.5">
+                          <Check size={12} className="text-[#C5A880]" />
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Size Selector */}
+                  <div className="pt-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400 block mb-2">
+                      Select Size
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProduct.sizes.map((sz) => (
+                        <button
+                          key={sz}
+                          onClick={() => setProductModalSize(sz)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                            productModalSize === sz
+                              ? "bg-[#1C1917] text-white"
+                              : "bg-[#F3EFE6] text-stone-700 hover:bg-stone-300"
+                          }`}
                         >
-                          <div className="space-y-1">
-                            <h4 className="text-sm font-semibold text-white">
-                              {item.product.name}
-                            </h4>
-                            <div className="text-[11px] text-zinc-400 font-mono">
-                              Size: {item.size} · {formatCurrency(item.product.price)}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5 bg-black/40 rounded-lg p-1 border border-white/10">
-                              <button
-                                onClick={() => updateQuantity(item.product.id, item.size, -1)}
-                                className="p-1 hover:text-amber-400"
-                              >
-                                <Minus size={12} />
-                              </button>
-                              <span className="text-xs font-mono px-1.5">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() => updateQuantity(item.product.id, item.size, 1)}
-                                className="p-1 hover:text-amber-400"
-                              >
-                                <Plus size={12} />
-                              </button>
-                            </div>
-
-                            <button
-                              onClick={() => removeFromCart(item.product.id, item.size)}
-                              className="text-zinc-500 hover:text-rose-400 p-1"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                          {sz}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Footer and Totals */}
-                {cart.length > 0 && (
-                  <div className="pt-6 border-t border-white/10 space-y-4">
-                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Discount code (try WELCOME20)"
-                        value={coupon}
-                        onChange={(e) => setCoupon(e.target.value)}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
-                      />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white"
-                      >
-                        Apply
-                      </button>
-                    </form>
-
-                    {couponApplied && (
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
-                        <Check size={12} />
-                        <span>20% discount applied!</span>
-                      </div>
-                    )}
-
-                    <div className="space-y-1.5 text-xs text-zinc-400">
-                      <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>{formatCurrency(cartTotal)}</span>
-                      </div>
-                      {couponApplied && (
-                        <div className="flex justify-between text-emerald-400">
-                          <span>Discount (20%)</span>
-                          <span>-{formatCurrency(discount)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between">
-                        <span>Worldwide Express Shipping</span>
-                        <span className="text-emerald-400 font-mono">FREE</span>
-                      </div>
-                      <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-white/10">
-                        <span>Total</span>
-                        <span className="text-amber-400 font-mono">
-                          {formatCurrency(finalTotal)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setIsCartOpen(false);
-                        setIsCheckoutOpen(true);
-                        setCheckoutStep("shipping");
-                      }}
-                      className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm shadow-xl shadow-amber-500/25 transition-transform active:scale-95"
-                    >
-                      Proceed to Checkout · {formatCurrency(finalTotal)}
-                    </button>
-                  </div>
-                )}
+                <div className="pt-4 border-t border-[#E8E3D9] flex gap-3">
+                  <button
+                    onClick={() => {
+                      addToCart(selectedProduct, productModalSize);
+                      setSelectedProduct(null);
+                      setIsCartOpen(true);
+                    }}
+                    className="flex-1 py-3.5 rounded-full bg-[#1C1917] hover:bg-stone-800 text-white text-xs font-mono tracking-wider font-semibold shadow-md transition-transform active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <ShoppingBag size={14} className="text-[#C5A880]" />
+                    <span>Add to Bag · {convertPrice(selectedProduct.priceUSD)}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Complete Checkout Flow Modal with Stripe Mock Integration */}
+      {/* Full-Fledged Checkout Modal */}
       <AnimatePresence>
         {isCheckoutOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => checkoutStep !== "payment" && setIsCheckoutOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 my-8"
+              className="relative w-full max-w-xl bg-[#FBF9F5] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#E8E3D9] z-10 max-h-[92vh] overflow-y-auto"
             >
-              <div className="flex justify-between items-center pb-4 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <Lock size={16} className="text-amber-400" />
-                  <h3 className="text-lg font-bold font-display text-white">
-                    Secure Stripe Checkout
-                  </h3>
+              {/* Checkout Steps Header */}
+              <div className="flex items-center justify-between pb-6 border-b border-[#E8E3D9] mb-6">
+                <div>
+                  <h3 className="font-serif text-2xl text-[#1C1917]">Atelier Checkout</h3>
+                  <p className="text-xs font-mono text-stone-500 mt-0.5">
+                    Order Total: <strong className="text-stone-900">{convertPrice(finalTotalUSD)}</strong>
+                  </p>
                 </div>
-                <button
-                  onClick={() => setIsCheckoutOpen(false)}
-                  className="p-1 rounded-full text-zinc-400 hover:text-white"
-                >
-                  <X size={18} />
-                </button>
+                {checkoutStep !== "success" && (
+                  <button
+                    onClick={() => setIsCheckoutOpen(false)}
+                    className="p-1 rounded-full text-stone-400 hover:text-stone-800"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
               </div>
 
+              {/* Step 1: Shipping Form */}
               {checkoutStep === "shipping" && (
                 <div className="space-y-4">
-                  <div className="text-xs text-zinc-400">Step 1 of 2: Shipping Destination</div>
+                  <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#C5A880] mb-2 font-bold">
+                    <Truck size={14} />
+                    <span>Step 1: Delivery Destination</span>
+                  </div>
 
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono text-stone-600 mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={shippingName}
+                        onChange={(e) => setShippingName(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-mono text-stone-600 mb-1">Email For Receipt</label>
+                      <input
+                        type="email"
+                        value={shippingEmail}
+                        onChange={(e) => setShippingEmail(e.target.value)}
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono text-stone-600 mb-1">Street Address</label>
                     <input
                       type="text"
-                      placeholder="Full Name"
-                      value={shippingName}
-                      onChange={(e) => setShippingName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                    <input
-                      type="email"
-                      placeholder="Email Address"
-                      value={shippingEmail}
-                      onChange={(e) => setShippingEmail(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Street Address"
                       value={shippingAddress}
                       onChange={(e) => setShippingAddress(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                      className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
                     />
-                    <div className="grid grid-cols-2 gap-3">
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono text-stone-600 mb-1">City</label>
                       <input
                         type="text"
-                        placeholder="City"
                         value={shippingCity}
                         onChange={(e) => setShippingCity(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-mono text-stone-600 mb-1">Postal Code</label>
                       <input
                         type="text"
-                        placeholder="Postal Code"
                         value={shippingZip}
                         onChange={(e) => setShippingZip(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
                       />
                     </div>
                   </div>
 
                   <button
                     onClick={() => setCheckoutStep("payment")}
-                    className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20"
+                    className="w-full mt-4 py-3.5 rounded-full bg-[#1C1917] hover:bg-stone-800 text-white text-xs font-mono tracking-wider font-semibold transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2"
                   >
-                    Continue to Payment →
+                    <span>Continue to Payment</span>
+                    <ArrowRight size={14} className="text-[#C5A880]" />
                   </button>
                 </div>
               )}
 
+              {/* Step 2: Payment Form */}
               {checkoutStep === "payment" && (
                 <form onSubmit={handleProcessCheckout} className="space-y-4">
-                  <div className="text-xs text-zinc-400">Step 2 of 2: Payment Authorization</div>
-
-                  <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 flex justify-between items-center text-xs">
-                    <span>Order Amount:</span>
-                    <strong className="text-amber-400 font-mono">{formatCurrency(finalTotal)}</strong>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-[11px] text-zinc-400 font-semibold">Card Number</label>
-                      <input
-                        type="text"
-                        required
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-amber-500"
-                      />
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#C5A880] font-bold">
+                      <CreditCard size={14} />
+                      <span>Step 2: Payment Authorization</span>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] text-zinc-400 font-semibold">Expiry Date</label>
-                        <input
-                          type="text"
-                          required
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-amber-500"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] text-zinc-400 font-semibold">CVC / CVV</label>
-                        <input
-                          type="text"
-                          required
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-amber-500"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
                     <button
                       type="button"
                       onClick={() => setCheckoutStep("shipping")}
-                      className="px-4 py-3 rounded-xl bg-white/5 text-xs text-zinc-400 hover:text-white"
+                      className="text-xs font-mono text-stone-500 hover:text-stone-900 underline"
                     >
                       Back
                     </button>
-                    <button
-                      type="submit"
-                      disabled={isProcessingPayment}
-                      className="flex-1 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25"
-                    >
-                      {isProcessingPayment ? "Authorizing Charge..." : `Pay ${formatCurrency(finalTotal)}`}
-                    </button>
                   </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono text-stone-600 mb-1">Card Number</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        placeholder="4242 •••• •••• 4242"
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
+                        required
+                      />
+                      <Lock size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono text-stone-600 mb-1">Expiry (MM/YY)</label>
+                      <input
+                        type="text"
+                        value={cardExpiry}
+                        onChange={(e) => setCardExpiry(e.target.value)}
+                        placeholder="MM/YY"
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-mono text-stone-600 mb-1">CVC / CVV</label>
+                      <input
+                        type="text"
+                        value={cardCvv}
+                        onChange={(e) => setCardCvv(e.target.value)}
+                        placeholder="734"
+                        className="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-[#C5A880]"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-[#EAE5DB] rounded-lg text-[11px] font-mono text-stone-600 space-y-1 border border-stone-300">
+                    <p className="font-bold text-stone-800">⚡ Turnkey Payment Gateway Active</p>
+                    <p>Processed securely via Stripe mock/live integration with instant email dispatch.</p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isProcessingPayment}
+                    className="w-full mt-4 py-3.5 rounded-full bg-[#1C1917] hover:bg-stone-800 text-white text-xs font-mono tracking-wider font-semibold transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isProcessingPayment ? (
+                      <span>Authorizing Payment...</span>
+                    ) : (
+                      <>
+                        <Lock size={14} className="text-[#C5A880]" />
+                        <span>Pay {convertPrice(finalTotalUSD)} & Confirm Order</span>
+                      </>
+                    )}
+                  </button>
                 </form>
               )}
 
+              {/* Step 3: Success Confirmation */}
               {checkoutStep === "success" && completedOrder && (
-                <div className="py-6 text-center space-y-4">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
                     <CheckCircle2 size={36} />
                   </div>
-                  <h4 className="text-xl font-bold font-display text-white">Payment Confirmed!</h4>
-                  <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                    A transaction receipt for <strong className="text-white">{formatCurrency(completedOrder.total)}</strong> has been processed (Charge ID: {completedOrder.chargeId}) and dispatched to {completedOrder.email}.
+
+                  <h4 className="font-serif text-2xl text-[#1C1917]">
+                    Commande Confirmée
+                  </h4>
+
+                  <p className="text-xs font-mono text-stone-600 max-w-sm mx-auto">
+                    Your bespoke items have entered preparation at our Paris studio. A receipt has been dispatched to{" "}
+                    <strong>{completedOrder.email}</strong>.
                   </p>
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-amber-300">
-                    Carrier Tracking ID: KR-{Math.floor(Math.random() * 900000 + 100000)}
+
+                  <div className="bg-[#EAE5DB] p-4 rounded-xl text-left text-xs font-mono text-stone-700 space-y-1 border border-stone-300">
+                    <p className="flex justify-between">
+                      <span className="text-stone-500">Transaction Ref:</span>
+                      <strong className="text-stone-900">{completedOrder.chargeId}</strong>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-stone-500">Amount Authorized:</span>
+                      <strong className="text-stone-900">{convertPrice(completedOrder.totalUSD)}</strong>
+                    </p>
+                    <p className="flex justify-between">
+                      <span className="text-stone-500">Dispatch Status:</span>
+                      <span className="text-emerald-700 font-bold">Preparation in Atelier</span>
+                    </p>
                   </div>
+
                   <button
-                    onClick={() => setIsCheckoutOpen(false)}
-                    className="px-6 py-2.5 rounded-full bg-amber-500 text-zinc-950 font-bold text-xs"
+                    onClick={() => {
+                      setIsCheckoutOpen(false);
+                      setCheckoutStep("shipping");
+                    }}
+                    className="px-6 py-3 rounded-full bg-[#1C1917] text-white text-xs font-mono tracking-wider"
                   >
-                    Return to Store
+                    Return to Atelier Store
                   </button>
                 </div>
               )}
@@ -886,5 +1288,3 @@ export const EcommerceDemo: React.FC = () => {
     </div>
   );
 };
-
-export default EcommerceDemo;

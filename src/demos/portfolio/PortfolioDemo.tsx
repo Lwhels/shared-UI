@@ -1,20 +1,5 @@
 import React, { useState } from "react";
 import confetti from "canvas-confetti";
-import {
-  Spotlight,
-  ThreeDCard,
-  CardContainer,
-  CardBody,
-  CardItem,
-  MovingBorderButton,
-  Carousel3D,
-  InfiniteMovingCards,
-  TextReveal,
-  BubbleReveal,
-  Magnetic,
-  GlassCard,
-  GlowingBadge,
-} from "../../components";
 import { sendEmail } from "../../services/emailService";
 import {
   Play,
@@ -33,707 +18,781 @@ import {
   Calendar,
   Film,
   Download,
+  Volume2,
+  VolumeX,
+  Clock,
+  Globe,
+  SlidersHorizontal,
+  Maximize2,
+  Cpu,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProjectCaseStudy {
   id: string;
+  index: string;
   title: string;
   client: string;
-  category: string;
+  discipline: "automotive" | "spatial" | "ai" | "fashion";
   year: string;
-  views: string;
+  award: string;
+  cameraSpecs: string;
   description: string;
-  gradient: string;
-  stats: string;
-  overview: string;
+  colorPalette: string[];
   deliverables: string[];
-  gear: string[];
+  gearManifest: string[];
+  clientQuote: string;
 }
 
 export const PortfolioDemo: React.FC = () => {
-  const [activeVideoModal, setActiveVideoModal] = useState<string | null>(null);
-  const [selectedCaseStudy, setSelectedCaseStudy] = useState<ProjectCaseStudy | null>(null);
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>("all");
+  const [activeScrubberIndex, setActiveScrubberIndex] = useState<number>(0);
+  const [selectedProject, setSelectedProject] = useState<ProjectCaseStudy | null>(null);
+  const [isAudioAmbienceActive, setIsAudioAmbienceActive] = useState<boolean>(false);
+  const [sensorGradeSlider, setSensorGradeSlider] = useState<number>(50);
 
-  // Quote Calculator State
-  const [serviceTier, setServiceTier] = useState<"commercial" | "social" | "brand">("commercial");
-  const [shootingDays, setShootingDays] = useState(2);
-  const [droneIncluded, setDroneIncluded] = useState(true);
-  const [soundDesign, setSoundDesign] = useState(true);
-  const [colorGrading, setColorGrading] = useState(true);
+  // Proposal Calculator State
+  const [scopeType, setScopeType] = useState<"film" | "web3d" | "full-brand">("film");
+  const [productionDays, setProductionDays] = useState<number>(3);
+  const [boltMotionControl, setBoltMotionControl] = useState<boolean>(true);
+  const [spatialAudioMaster, setSpatialAudioMaster] = useState<boolean>(true);
+  const [droneHeavyLifter, setDroneHeavyLifter] = useState<boolean>(true);
 
-  // Contact Form State
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactBudget, setContactBudget] = useState("$25k - $50k");
-  const [contactMessage, setContactMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [contactSubmitted, setContactSubmitted] = useState(false);
+  // Proposal Submission State
+  const [clientName, setClientName] = useState("Marcus Sterling");
+  const [clientEmail, setClientEmail] = useState("m.sterling@atelier-brands.com");
+  const [clientCompany, setClientCompany] = useState("Porsche Design Group");
+  const [timelineWeeks, setTimelineWeeks] = useState("6-8 Weeks");
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+  const [proposalConfirmed, setProposalConfirmed] = useState<any>(null);
 
   const projects: ProjectCaseStudy[] = [
     {
       id: "p1",
-      title: "Apex GT Alpine Expedition",
+      index: "01",
+      title: "Apex GT Alpine Velocity",
       client: "Porsche Motorsport Europe",
-      category: "Commercial Film & Stills",
+      discipline: "automotive",
       year: "2026",
-      views: "2.4M",
-      description: "High-octane tracking shots through Alpine passes featuring precision gyro stabilization and custom drone cinematography.",
-      gradient: "from-amber-500/30 via-orange-600/20 to-zinc-900",
-      stats: "4K HDR · 120fps",
-      overview: "Shot across 4 days in the Swiss Furka Pass at 2,400m altitude. Required custom heated battery enclosures for the pursuit camera vehicle and sub-zero drone flight permissions.",
-      deliverables: ["90s Cinematic Broadcast Spot", "5x 9:16 Vertical Social Cutdowns", "40 Medium Format Hero Stills", "Dolby Atmos Exhaust Audio Master"],
-      gear: ["ARRI Alexa Mini LF", "Cooke Anamorphic /i Full Frame Plus", "Shotover F1 Gyro Head", "Custom FPV 6S Cinelifter"],
+      award: "FWA of the Month · Awwwards SOTD",
+      cameraSpecs: "ARRI Alexa Mini LF · Cooke Anamorphic /i 2x",
+      description: "High-octane tracking cinematography through the Swiss Furka Pass at 2,400m altitude. Custom gyro-stabilized pursuit camera chasing the 911 GT3 RS through sub-zero alpine blizzards.",
+      colorPalette: ["#0C1014", "#E63946", "#F1FAEE", "#457B9D"],
+      deliverables: ["90s Broadcast Sizzle Reel", "5x 9:16 Vertical Social Masters", "40 Medium-Format Hero Stills", "Dolby Atmos 7.1.4 Sound Master"],
+      gearManifest: ["ARRI Alexa Mini LF", "Cooke Anamorphic /i 35mm & 65mm", "Shotover F1 Gyro Rig", "Custom FPV 6S Heavy-Lifter"],
+      clientQuote: "Kronos captured the mechanical violence and aerodynamic precision of the GT3 RS with unprecedented sensory weight.",
     },
     {
       id: "p2",
-      title: "Monolith Hypercar Global Debut",
+      index: "02",
+      title: "Monolith Hypercar World Premiere",
       client: "Rimac Automobili",
-      category: "Global Brand Launch",
-      year: "2025",
-      views: "5.1M",
-      description: "Complete visual identity and launch sizzle reel capturing raw aerodynamic contours under dramatic studio lighting.",
-      gradient: "from-purple-600/30 via-indigo-600/20 to-zinc-900",
-      stats: "Commercial · Worldwide",
-      overview: "Filmed in an airplane hangar in Valencia with robotic motion control arms and a 30-meter curved LED volume simulating hyper-velocity horizon lights.",
-      deliverables: ["Keynote Reveal Film", "Press Kit 8K Renders", "Worldwide Social Campaign", "B-Roll Engineering Archive"],
-      gear: ["RED V-Raptor XL 8K", "Bolt X High Speed Motion Control Rig", "Leitz Prime Lenses"],
+      discipline: "automotive",
+      year: "2026",
+      award: "Cannes Corporate Gold Dolphin",
+      cameraSpecs: "RED V-Raptor XL 8K · Bolt X High-Speed Motion Arm",
+      description: "Global brand launch film produced in an acoustic airplane hangar with a 30-meter curved LED volume simulating hyper-velocity horizon lights under dramatic high-contrast chiaroscuro.",
+      colorPalette: ["#0A0A0C", "#8B5CF6", "#06B6D4", "#E2E8F0"],
+      deliverables: ["Keynote Reveal Film", "Press Kit 8K Volumetric Renders", "Worldwide Interactive Web Configurator", "Soundtrack by Nils Frahm"],
+      gearManifest: ["RED V-Raptor XL 8K", "Bolt X High-Speed Robotic Arm", "Leitz Prime T1.8 Glass", "Arri Skypanel X23 Array"],
+      clientQuote: "The film set a new global benchmark for electric hypercar debuts, generating 14 million impressions in 24 hours.",
     },
     {
       id: "p3",
-      title: "Nocturne Endurance Sessions",
-      client: "Scuderia Corse",
-      category: "Documentary Short",
+      index: "03",
+      title: "Acoustic Silence & Form",
+      client: "Bang & Olufsen Denmark",
+      discipline: "spatial",
       year: "2025",
-      views: "1.8M",
-      description: "An intimate look into endurance racing mechanics under midnight sodium lights with spatial audio sound design.",
-      gradient: "from-emerald-500/30 via-teal-700/20 to-zinc-900",
-      stats: "Film Festival Selection",
-      overview: "An unfiltered 15-minute documentary covering the 24 Hours of Nürburgring. Captured entirely handheld and from hot pit lanes amidst screaming V8s and tire smoke.",
-      deliverables: ["15-Minute Short Film", "Festival 4K DCP Print", "Original Vinyl Soundtrack"],
-      gear: ["Sony FX9 with Raw Back", "Fujinon Premista Zooms", "Sound Devices 833 8-Channel Recorder"],
+      award: "D&AD Black Pencil Nominee",
+      cameraSpecs: "Phantom Flex 4K (1000fps) · Macro Probe Lenses",
+      description: "Extreme slow-motion study of anodized aluminium acoustic diaphragms oscillating in micro-gravity. Every milled perforation and spun volume wheel rendered as tactile architectural sculpture.",
+      colorPalette: ["#141416", "#D4AF37", "#C0C0C0", "#FAF8F5"],
+      deliverables: ["60s Scandinavian Cinema Ad", "Interactive 3D Web Audio Sandbox", "Acoustic Frequency Spec Book"],
+      gearManifest: ["Phantom Flex 4K High-Speed", "Laowa 24mm f/14 2X Macro Probe", "Motion Control Slider Kazu", "Binaural Dummy-Head Mics"],
+      clientQuote: "An exquisite visual distillation of our 100-year Danish sound craftsmanship.",
+    },
+    {
+      id: "p4",
+      index: "04",
+      title: "Zero Gravity Monolith Capsule",
+      client: "Balenciaga Paris Archive",
+      discipline: "fashion",
+      year: "2025",
+      award: "Webby Winner: Best Visual Design",
+      cameraSpecs: "Sony Venice 2 8K · Hawk V-Lite Anamorphics",
+      description: "A brutalist digital runway exhibition set inside a decommissioned concrete subterranean cooling tower in Berlin. Real-time motion capture models draped in sculpted carbon-fiber outerwear.",
+      colorPalette: ["#050505", "#CCFF00", "#52525B", "#E4E4E7"],
+      deliverables: ["Virtual Runway Experience", "Spatial Video Vision Pro App", "Photogrammetry Asset Vault"],
+      gearManifest: ["Sony Venice 2 8K Full-Frame", "Hawk V-Lite 45mm Anamorphic", "Xsens MVN Motion Capture Suit", "Unreal Engine 5.4 Live Stage"],
+      clientQuote: "Radical, unapologetic, and completely singular. Kronos operates in a creative category of their own.",
     },
   ];
 
-  // Dynamic Quote Calculation
-  const baseRate = serviceTier === "commercial" ? 18000 : serviceTier === "brand" ? 12000 : 7500;
-  const dayRate = 4500 * shootingDays;
-  const droneFee = droneIncluded ? 3500 : 0;
-  const soundFee = soundDesign ? 2500 : 0;
-  const colorFee = colorGrading ? 3000 : 0;
-  const estimatedTotal = baseRate + dayRate + droneFee + soundFee + colorFee;
+  const filteredProjects = projects.filter(
+    (p) => selectedDiscipline === "all" || p.discipline === selectedDiscipline
+  );
 
-  const handleContactSubmit = async (e: React.FormEvent) => {
+  const activeScrubberProject = projects[activeScrubberIndex] || projects[0];
+
+  // Proposal Calculator calculation
+  const baseDayRate = scopeType === "film" ? 14000 : scopeType === "web3d" ? 9500 : 22000;
+  const productionSubtotal = baseDayRate * productionDays;
+  const boltCost = boltMotionControl ? 8500 : 0;
+  const audioCost = spatialAudioMaster ? 4500 : 0;
+  const droneCost = droneHeavyLifter ? 5500 : 0;
+  const estimatedProposalTotal = productionSubtotal + boltCost + audioCost + droneCost;
+
+  const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactEmail) return;
+    setIsSubmittingProposal(true);
 
-    setIsSubmitting(true);
-    await sendEmail({
-      to: contactEmail,
-      subject: `Project Inquiry Received: ${contactName || "Client"} · Vehicular Media`,
-      template: "contact_proposal",
-      data: {
-        clientName: contactName,
-        budgetRange: contactBudget,
-        message: contactMessage,
-        estimatedQuote: `$${estimatedTotal.toLocaleString()}`,
-        serviceTier,
-        shootingDays,
-      },
-    });
+    const dossierRef = `KRN-ATELIER-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    confetti({
-      particleCount: 80,
-      spread: 60,
-      origin: { y: 0.6 },
-    });
+    try {
+      await sendEmail({
+        to: clientEmail,
+        subject: `Commission Dossier Confirmed: ${dossierRef} — Kronos Atelier`,
+        template: "order_confirmation",
+        data: {
+          customerName: clientName,
+          shippingAddress: `${clientCompany} · Scope: ${scopeType.toUpperCase()}`,
+          amountPaid: `Estimated Commission: $${estimatedProposalTotal.toLocaleString()}`,
+          chargeId: dossierRef,
+          last4: "COMMISSION",
+          items: [
+            `${productionDays} Production Days (${scopeType.toUpperCase()})`,
+            boltMotionControl ? "Bolt X High-Speed Motion Control Arm" : "",
+            spatialAudioMaster ? "Dolby Atmos 7.1.4 Spatial Audio Master" : "",
+            droneHeavyLifter ? "Sub-Zero Heavy-Lifter Gyro FPV Drone" : "",
+          ].filter(Boolean),
+        },
+      });
 
-    setIsSubmitting(false);
-    setContactSubmitted(true);
+      confetti({
+        particleCount: 130,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#CCFF00", "#FFFFFF", "#333333", "#888888"],
+      });
+
+      setProposalConfirmed({
+        ref: dossierRef,
+        name: clientName,
+        email: clientEmail,
+        company: clientCompany,
+        total: estimatedProposalTotal,
+      });
+
+      setIsSubmittingProposal(false);
+    } catch (err: any) {
+      setIsSubmittingProposal(false);
+      alert(err.message || "Proposal submission failed");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#0c0c0e] text-white">
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-amber-500/10 blur-[140px] pointer-events-none rounded-full" />
-
-        <div className="relative z-10 max-w-4xl mx-auto space-y-8">
-          <div className="flex justify-center">
-            <GlowingBadge variant="amber">
-              AUTOMOTIVE & COMMERCIAL MEDIA STUDIO
-            </GlowingBadge>
-          </div>
-
-          <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.08]">
-            Capturing Velocity with{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500">
-              <TextReveal text="Unmatched Cinematic Vision" triggerOn="mount" />
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto font-light leading-relaxed">
-            We produce scroll-stopping commercial campaigns, automotive films, and creative digital assets for elite brands worldwide.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Magnetic strength={0.3}>
-              <button
-                onClick={() => setActiveVideoModal("2026 Showreel Reel")}
-                className="flex items-center gap-2.5 px-8 py-4 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm shadow-xl shadow-amber-500/25 transition-all hover:scale-105 active:scale-95"
-              >
-                <Play size={16} fill="currentColor" />
-                <span>Watch 2026 Showreel</span>
-              </button>
-            </Magnetic>
-
-            <Magnetic strength={0.3}>
-              <a
-                href="#calculator"
-                className="flex items-center gap-2 px-8 py-4 rounded-full border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white font-medium text-sm transition-all"
-              >
-                <Sliders size={16} />
-                <span>Estimate Production Cost</span>
-              </a>
-            </Magnetic>
-          </div>
-        </div>
-      </section>
-
-      {/* Infinite Client Ticker */}
-      <section className="py-12 border-y border-white/10 bg-zinc-950/60 overflow-hidden">
-        <div className="text-center mb-6">
-          <p className="text-xs uppercase tracking-widest font-mono text-amber-400/80">
-            Trusted by World-Class Marques & Creators
-          </p>
-        </div>
-        <InfiniteMovingCards
-          items={[
-            { quote: "Vehicular Media delivered our fastest-selling vehicle launch film.", name: "Scuderia Heritage", title: "Brand Director" },
-            { quote: "Every frame belongs in a gallery. True visual masters.", name: "Apex Dynamics", title: "Creative Lead" },
-            { quote: "Over 12M organic views on our product release within 48 hours.", name: "Veloce Motors", title: "Head of Marketing" },
-            { quote: "Flawless color science and sound design on every cut.", name: "Kinetix Studio", title: "Executive Producer" },
-          ]}
-          speed="normal"
-        />
-      </section>
-
-      {/* 3D Perspective Project Showcase */}
-      <section id="projects" className="py-24 px-6 max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <span className="text-xs font-mono font-semibold text-amber-400 uppercase tracking-widest">
-            Selected Works
+    <div className="min-h-screen bg-[#060709] text-white font-sans selection:bg-[#CCFF00] selection:text-[#060709]">
+      {/* Studio Worldwide Clocks & Telemetry Header */}
+      <div className="bg-[#090B0E] border-b border-white/10 px-4 sm:px-8 py-2.5 text-[11px] font-mono tracking-widest flex items-center justify-between text-zinc-400">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-[#CCFF00] font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#CCFF00] animate-pulse" />
+            <span>KRONOS // ATELIER · TOKYO & NYC</span>
           </span>
-          <h2 className="text-3xl sm:text-5xl font-bold font-display">
-            Interactive 3D Project Cards
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Hover over each showcase to observe multi-layered perspective tilt. Click "Case Study" to inspect technical shooting breakdowns.
-          </p>
+          <span className="hidden md:inline text-zinc-700">|</span>
+          <span className="hidden md:inline">TYO 18:45 JST</span>
+          <span className="hidden md:inline text-zinc-700">|</span>
+          <span className="hidden md:inline">NYC 05:45 EDT</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {projects.map((proj) => (
-            <CardContainer key={proj.id} className="w-full">
-              <CardBody className="bg-zinc-900/80 border border-white/10 hover:border-amber-500/40 w-full rounded-2xl p-6 backdrop-blur-xl group/card transition-shadow hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col justify-between h-[490px]">
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <CardItem translateZ={30}>
-                      <span className="text-xs font-mono text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
-                        {proj.category}
-                      </span>
-                    </CardItem>
-                    <CardItem translateZ={20}>
-                      <span className="text-xs text-zinc-500 font-mono">{proj.year}</span>
-                    </CardItem>
-                  </div>
-
-                  <CardItem translateZ={50} className="w-full">
-                    <h3 className="text-2xl font-bold font-display text-white mb-2 group-hover/card:text-amber-200 transition-colors">
-                      {proj.title}
-                    </h3>
-                  </CardItem>
-
-                  <CardItem translateZ={40} className="w-full">
-                    <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3">
-                      {proj.description}
-                    </p>
-                  </CardItem>
-
-                  {/* Visual canvas preview */}
-                  <CardItem translateZ={80} rotateX={10} rotateZ={-3} className="w-full my-6">
-                    <div className={`h-40 w-full rounded-xl bg-gradient-to-br ${proj.gradient} border border-white/10 flex flex-col items-center justify-center p-4 relative overflow-hidden group/visual cursor-pointer`}
-                      onClick={() => setActiveVideoModal(proj.title)}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-amber-400 group-hover/visual:scale-110 transition-transform">
-                        <Play size={18} fill="currentColor" />
-                      </div>
-                      <div className="absolute bottom-3 left-3 text-[11px] font-mono text-white/70">
-                        {proj.stats}
-                      </div>
-                      <div className="absolute bottom-3 right-3 text-[11px] font-mono text-amber-300">
-                        {proj.views} views
-                      </div>
-                    </div>
-                  </CardItem>
-                </div>
-
-                <div className="flex justify-between items-center pt-4 border-t border-white/10">
-                  <CardItem translateZ={30}>
-                    <button
-                      onClick={() => setActiveVideoModal(proj.title)}
-                      className="text-xs font-semibold text-white/80 hover:text-white flex items-center gap-1 group"
-                    >
-                      <span>Preview Reel</span>
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </CardItem>
-                  <CardItem translateZ={40}>
-                    <button
-                      onClick={() => setSelectedCaseStudy(proj)}
-                      className="text-xs font-mono text-amber-400 hover:text-amber-300 underline underline-offset-4"
-                    >
-                      Case Study →
-                    </button>
-                  </CardItem>
-                </div>
-              </CardBody>
-            </CardContainer>
-          ))}
-        </div>
-      </section>
-
-      {/* Secret Lens: BubbleReveal Demonstration */}
-      <section className="py-20 px-6 max-w-5xl mx-auto">
-        <div className="text-center mb-8 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            Color Grading Technology
-          </span>
-          <h2 className="text-3xl font-bold font-display">
-            Interactive Bubble Reveal Lens
-          </h2>
-          <p className="text-sm text-zinc-400 max-w-lg mx-auto">
-            Hover your cursor across the canvas below to reveal raw log camera sensor data beneath final graded cinema footage.
-          </p>
-        </div>
-
-        <div className="h-[420px] w-full rounded-2xl overflow-hidden border border-white/15 relative shadow-2xl bg-zinc-950">
-          <BubbleReveal
-            size={220}
-            overlayContent={
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 text-center relative">
-                <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 animate-pulse">
-                  <Eye size={24} />
-                </div>
-                <h3 className="text-2xl font-bold font-display text-white mb-2">
-                  FINAL CINEMA COLOR GRADE
-                </h3>
-                <p className="text-sm text-zinc-400 max-w-md">
-                  Move your cursor around to peer into the underlying RAW camera sensor log footage.
-                </p>
-                <div className="mt-4 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-mono border border-amber-500/30">
-                  ARRI Alexa Mini LF · Rec.709 Master
-                </div>
-              </div>
-            }
+        <div className="flex items-center gap-4">
+          {/* Audio Telemetry Synthesizer Toggle */}
+          <button
+            onClick={() => {
+              setIsAudioAmbienceActive(!isAudioAmbienceActive);
+            }}
+            className="flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors"
           >
-            <div className="w-full h-full bg-gradient-to-r from-emerald-950 via-teal-900 to-amber-950 flex flex-col items-center justify-center p-8 text-center">
-              <h3 className="text-3xl font-bold font-display text-white mb-2">
-                UNGRADED S-LOG3 SENSOR
-              </h3>
-              <p className="text-sm text-white/80 max-w-md">
-                14+ stops of dynamic range captured flat for non-destructive dynamic range sculpting.
-              </p>
-              <div className="mt-4 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-mono">
-                LogC3 Flat Profile · 3200K ISO 800
+            {isAudioAmbienceActive ? (
+              <>
+                <Volume2 size={13} className="text-[#CCFF00]" />
+                <span className="text-[10px] text-[#CCFF00] font-bold">AUDIO TELEMETRY: ON</span>
+              </>
+            ) : (
+              <>
+                <VolumeX size={13} className="text-zinc-500" />
+                <span className="text-[10px] text-zinc-500">SOUND: OFF</span>
+              </>
+            )}
+          </button>
+
+          <span className="hidden sm:inline px-2 py-0.5 rounded bg-white/10 text-white text-[10px] font-bold">
+            BOOKING Q4 2026
+          </span>
+        </div>
+      </div>
+
+      {/* Brutalist Brand Header */}
+      <header className="sticky top-0 z-40 bg-[#060709]/95 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-baseline gap-2">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl tracking-tighter text-white uppercase">
+              Kronos
+            </h1>
+            <span className="text-xs font-mono text-[#CCFF00] font-bold tracking-widest">
+              [ATELIER]
+            </span>
+          </div>
+
+          <nav className="hidden lg:flex items-center gap-8 text-xs font-mono tracking-widest text-zinc-400">
+            <a href="#reel" className="hover:text-white transition-colors">01 // REEL SCRUBBER</a>
+            <a href="#works" className="hover:text-white transition-colors">02 // ARCHIVE INDEX</a>
+            <a href="#lab" className="hover:text-white transition-colors">03 // COLOR SENSOR</a>
+            <a href="#commission" className="hover:text-white transition-colors">04 // PROPOSAL</a>
+          </nav>
+
+          <button
+            onClick={() => {
+              const el = document.getElementById("commission");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="px-5 py-2.5 rounded-full bg-[#CCFF00] hover:bg-[#b8e600] text-[#060709] font-mono text-xs font-bold tracking-widest uppercase transition-transform active:scale-95 shadow-lg shadow-[#CCFF00]/10"
+          >
+            Initiate Project
+          </button>
+        </div>
+      </header>
+
+      {/* Monolithic Hero Section */}
+      <section className="relative py-20 sm:py-32 px-4 sm:px-8 border-b border-white/10 overflow-hidden">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <div className="inline-flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase tracking-widest px-3 py-1 rounded-full bg-white/5 border border-white/10">
+            <span className="text-[#CCFF00]">●</span>
+            <span>AWARDED INDEPENDENT PRODUCTION STUDIO OF THE YEAR</span>
+          </div>
+
+          <h2 className="font-display text-4xl sm:text-7xl lg:text-8xl font-extrabold tracking-tighter uppercase leading-[0.95] text-white">
+            Sculpting Digital <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-400 to-[#CCFF00]">
+              Artifacts at the Edge
+            </span>{" "}
+            of Sensation.
+          </h2>
+
+          <p className="text-sm sm:text-base text-zinc-400 max-w-2xl font-light leading-relaxed font-mono">
+            We partner with sovereign luxury automotive marques, haute horlogerie houses, and frontier AI systems to author visual experiences with raw physical mass.
+          </p>
+        </div>
+      </section>
+
+      {/* Interactive Horizontal Project Scrubber / Reel Preview */}
+      <section id="reel" className="border-b border-white/10 bg-[#090B0E] py-16 px-4 sm:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex items-center justify-between font-mono text-xs text-zinc-400 pb-4 border-b border-white/10">
+            <span>INTERACTIVE SIZZLE REEL SCRUBBER // HOVER INDEX TO LOAD TELEMETRY</span>
+            <span className="text-[#CCFF00] font-bold">
+              {activeScrubberProject.index} OF {projects.length.toString().padStart(2, "0")}
+            </span>
+          </div>
+
+          {/* Large Dynamic Preview Canvas */}
+          <div className="relative rounded-2xl bg-[#0F131A] border border-white/15 overflow-hidden p-8 sm:p-12 shadow-2xl min-h-[380px] flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div>
+                <span className="text-[11px] font-mono text-[#CCFF00] uppercase tracking-widest block mb-1">
+                  {activeScrubberProject.client}
+                </span>
+                <h3 className="font-display text-3xl sm:text-5xl font-extrabold uppercase text-white tracking-tight">
+                  {activeScrubberProject.title}
+                </h3>
+              </div>
+
+              <div className="text-right font-mono text-xs space-y-1">
+                <span className="px-2.5 py-1 rounded-full bg-white/10 text-white font-bold block">
+                  {activeScrubberProject.award}
+                </span>
+                <span className="text-zinc-400 text-[11px] block">
+                  {activeScrubberProject.cameraSpecs}
+                </span>
               </div>
             </div>
-          </BubbleReveal>
-        </div>
-      </section>
 
-      {/* Production Cylinder Carousel */}
-      <section className="py-20 px-6 max-w-6xl mx-auto overflow-hidden">
-        <div className="text-center mb-6 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            Production Pillars
-          </span>
-          <h2 className="text-3xl font-bold font-display">
-            3D Rotating Cylinder Carousel
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Rotate through core production disciplines in a realistic 3D cylinder.
-          </p>
-        </div>
+            <p className="text-sm text-zinc-300 font-light max-w-2xl leading-relaxed my-6 font-mono">
+              {activeScrubberProject.description}
+            </p>
 
-        <Carousel3D
-          cards={[
-            {
-              title: "Pursuit Vehicle Tracking",
-              subtitle: "High Speed Stabilization",
-              badge: "Equipment",
-              content: "Customized Porsche Cayenne pursuit platform with stabilized 3-axis gyro head for zero-shake tracking up to 130 mph.",
-            },
-            {
-              title: "Cinematic FPV Piloting",
-              subtitle: "Aerial Immersion",
-              badge: "Drones",
-              content: "Licensed FPV drone operators capturing inches-close trajectory passes through obstacles and over vehicle hoods.",
-            },
-            {
-              title: "Spatial Sound Design",
-              subtitle: "Acoustic Fidelity",
-              badge: "Post-Production",
-              content: "Bespoke exhaust note telemetry recording and Dolby Atmos mastering for hair-raising engine acoustics.",
-            },
-            {
-              title: "Color Science & LUTs",
-              subtitle: "Custom Look Profiles",
-              badge: "Grading",
-              content: "Proprietary film emulation profiles engineered for high-contrast automotive paints and moody night horizons.",
-            },
-          ]}
-        />
-      </section>
-
-      {/* Interactive Production Quote & Budget Estimator */}
-      <section id="calculator" className="py-24 px-6 max-w-5xl mx-auto border-t border-white/10">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            Instant Scoping
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold font-display">
-            Interactive Production Budget Estimator
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Customize scope, production days, and post-production modules to generate a real-time transparent estimate.
-          </p>
-        </div>
-
-        <GlassCard className="p-8 sm:p-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-            <div className="space-y-6">
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  Campaign Scope Tier
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: "commercial", label: "Commercial Spot", desc: "$18k Base" },
-                    { id: "brand", label: "Brand Film", desc: "$12k Base" },
-                    { id: "social", label: "Social Suite", desc: "$7.5k Base" },
-                  ].map((tier) => (
-                    <button
-                      key={tier.id}
-                      type="button"
-                      onClick={() => setServiceTier(tier.id as any)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        serviceTier === tier.id
-                          ? "bg-amber-500/20 border-amber-500 text-white"
-                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
-                      }`}
-                    >
-                      <div className="text-xs font-bold">{tier.label}</div>
-                      <div className="text-[10px] text-amber-400 font-mono mt-0.5">{tier.desc}</div>
-                    </button>
+            {/* Bottom Project Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10 font-mono text-xs">
+              <div className="flex items-center gap-3">
+                <span className="text-zinc-500 uppercase tracking-widest text-[10px]">
+                  Color Palette:
+                </span>
+                <div className="flex gap-1.5">
+                  {activeScrubberProject.colorPalette.map((hex) => (
+                    <div
+                      key={hex}
+                      className="w-4 h-4 rounded-full border border-white/30"
+                      style={{ backgroundColor: hex }}
+                      title={hex}
+                    />
                   ))}
                 </div>
               </div>
 
-              <div>
-                <div className="flex justify-between text-xs text-zinc-300 mb-2">
-                  <span>Shooting Days: <strong className="text-amber-400">{shootingDays} Days</strong></span>
-                  <span className="text-zinc-500 font-mono">$4,500 / day</span>
+              <button
+                onClick={() => setSelectedProject(activeScrubberProject)}
+                className="px-5 py-2.5 rounded-full bg-white text-[#060709] font-bold text-xs tracking-wider uppercase hover:bg-[#CCFF00] transition-colors flex items-center gap-2"
+              >
+                <span>Examine Full Case File</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Interactive Index Scrubber Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-xs">
+            {projects.map((proj, idx) => (
+              <button
+                key={proj.id}
+                onMouseEnter={() => setActiveScrubberIndex(idx)}
+                onClick={() => setActiveScrubberIndex(idx)}
+                className={`p-4 rounded-xl border text-left transition-all ${
+                  activeScrubberIndex === idx
+                    ? "border-[#CCFF00] bg-white/10 text-white shadow-lg shadow-[#CCFF00]/10"
+                    : "border-white/10 bg-white/5 text-zinc-400 hover:text-white hover:border-white/30"
+                }`}
+              >
+                <span className="text-[#CCFF00] font-bold block text-sm mb-1">
+                  // {proj.index}
+                </span>
+                <strong className="block text-white leading-tight font-sans">
+                  {proj.client}
+                </strong>
+                <span className="text-[11px] text-zinc-400 block mt-1">
+                  {proj.year} · {proj.discipline}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Cinematic Project Showcase Index */}
+      <section id="works" className="max-w-7xl mx-auto px-4 sm:px-8 py-20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10 mb-10 font-mono">
+          <div className="space-y-1">
+            <span className="text-xs text-[#CCFF00] uppercase tracking-widest">
+              COMMISSION ARCHIVE (2025 — 2026)
+            </span>
+            <h3 className="font-display text-3xl font-extrabold uppercase text-white tracking-tight">
+              Selected Works
+            </h3>
+          </div>
+
+          {/* Discipline Filter */}
+          <div className="flex gap-2">
+            {[
+              { id: "all", label: "All Disciplines" },
+              { id: "automotive", label: "Automotive" },
+              { id: "spatial", label: "Spatial & Sound" },
+              { id: "fashion", label: "Fashion & 3D" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedDiscipline(tab.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-mono transition-colors ${
+                  selectedDiscipline === tab.id
+                    ? "bg-[#CCFF00] text-[#060709] font-bold"
+                    : "bg-white/5 text-zinc-400 hover:text-white"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Project Rows */}
+        <div className="divide-y divide-white/10">
+          {filteredProjects.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => setSelectedProject(p)}
+              className="py-8 group cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/[0.02] px-4 rounded-xl transition-colors"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 font-mono text-xs text-zinc-500">
+                  <span className="text-[#CCFF00] font-bold">// {p.index}</span>
+                  <span>{p.client}</span>
+                  <span>•</span>
+                  <span>{p.year}</span>
+                </div>
+
+                <h4 className="font-display text-2xl sm:text-4xl font-extrabold uppercase text-white group-hover:text-[#CCFF00] transition-colors tracking-tight">
+                  {p.title}
+                </h4>
+
+                <p className="text-xs font-mono text-zinc-400 max-w-xl line-clamp-2">
+                  {p.description}
+                </p>
+              </div>
+
+              <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0 font-mono text-xs">
+                <span className="px-3 py-1 rounded-full bg-white/10 text-white font-bold">
+                  {p.award}
+                </span>
+                <span className="text-zinc-500 text-[11px]">
+                  {p.cameraSpecs.split("·")[0]}
+                </span>
+                <span className="text-[#CCFF00] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span>Open Dossier</span>
+                  <ArrowRight size={13} />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Interactive Color Sensor & RAW Film Grading Lab */}
+      <section id="lab" className="border-t border-b border-white/10 bg-[#090B0E] py-20 px-4 sm:px-8">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="text-center space-y-2 font-mono">
+            <span className="text-xs text-[#CCFF00] uppercase tracking-widest">
+              OPTICAL COLOR SCIENCE // LAB SIMULATOR
+            </span>
+            <h3 className="font-display text-3xl sm:text-4xl font-extrabold uppercase text-white">
+              Log-C RAW vs ACES 1.3 Film Grade
+            </h3>
+            <p className="text-xs text-zinc-400 max-w-md mx-auto">
+              Slide the optical sensor calibration threshold to compare flat sensor Log latitude against final mastered print emulation.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/15 bg-[#0F131A] p-6 sm:p-8 space-y-6">
+            {/* Visual Grade Box */}
+            <div
+              className="h-64 sm:h-80 w-full rounded-xl relative overflow-hidden flex items-center justify-center border border-white/20 transition-all"
+              style={{
+                filter: `contrast(${1 + sensorGradeSlider * 0.015}) saturate(${sensorGradeSlider * 0.02})`,
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950 via-zinc-800 to-zinc-900" />
+              <div className="relative text-center p-6 space-y-2 font-mono">
+                <div className="w-16 h-16 mx-auto rounded-full bg-[#CCFF00]/10 border border-[#CCFF00] text-[#CCFF00] flex items-center justify-center mb-2">
+                  <Camera size={28} />
+                </div>
+                <h4 className="text-xl font-bold text-white">ARRI ALEXA LF LOG-C4</h4>
+                <p className="text-xs text-zinc-400">
+                  Dynamic Range: 17 Stops · Wide Gamut 4
+                </p>
+              </div>
+
+              <div className="absolute bottom-4 left-4 font-mono text-[11px] text-zinc-400 bg-black/60 px-3 py-1 rounded backdrop-blur">
+                Sensor Level: {sensorGradeSlider}% (Raw to Master)
+              </div>
+            </div>
+
+            {/* Slider Bar */}
+            <div className="space-y-2 font-mono text-xs">
+              <div className="flex justify-between items-center text-zinc-400">
+                <span>0% — RAW ARRI LOG-C FLAT</span>
+                <span className="text-[#CCFF00] font-bold">
+                  {sensorGradeSlider}% CALIBRATED
+                </span>
+                <span>100% — MASTERED ACES PRINT</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={sensorGradeSlider}
+                onChange={(e) => setSensorGradeSlider(Number(e.target.value))}
+                className="w-full accent-[#CCFF00] cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Production Proposal Builder */}
+      <section id="commission" className="max-w-5xl mx-auto px-4 sm:px-8 py-20">
+        <div className="text-center space-y-3 mb-12 font-mono">
+          <span className="text-xs text-[#CCFF00] uppercase tracking-widest">
+            COMMISSION PROPOSAL ENGINE
+          </span>
+          <h3 className="font-display text-3xl sm:text-5xl font-extrabold uppercase text-white tracking-tight">
+            Calculate Project Scope
+          </h3>
+          <p className="text-xs text-zinc-400 max-w-lg mx-auto">
+            Configure your technical deliverables, crew scale, and hardware package for transparent upfront budgeting.
+          </p>
+        </div>
+
+        <div className="bg-[#090B0E] border border-white/15 rounded-2xl p-6 sm:p-10 shadow-2xl font-mono space-y-8">
+          {/* Scope Selector */}
+          <div className="space-y-3">
+            <span className="text-xs uppercase text-zinc-400 tracking-wider block">
+              1. Primary Discipline Scope:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { id: "film", label: "Commercial Cinematic Spot", rate: "$14k/day" },
+                { id: "web3d", label: "Interactive 3D Web Engine", rate: "$9.5k/day" },
+                { id: "full-brand", label: "Full Global Brand Launch", rate: "$22k/day" },
+              ].map((tier) => (
+                <button
+                  key={tier.id}
+                  onClick={() => setScopeType(tier.id as any)}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    scopeType === tier.id
+                      ? "border-[#CCFF00] bg-white/10 text-white"
+                      : "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  <strong className="block text-white text-xs mb-1 font-sans">
+                    {tier.label}
+                  </strong>
+                  <span className="text-[11px] text-[#CCFF00]">{tier.rate}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Days Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-zinc-400">2. Production / Engineering Days:</span>
+              <strong className="text-white text-sm">{productionDays} Days Selected</strong>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={7}
+              value={productionDays}
+              onChange={(e) => setProductionDays(Number(e.target.value))}
+              className="w-full accent-[#CCFF00] cursor-pointer"
+            />
+          </div>
+
+          {/* Hardware & Sound Packages */}
+          <div className="space-y-3">
+            <span className="text-xs uppercase text-zinc-400 tracking-wider block">
+              3. Specialized Hardware Modules:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <label className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between cursor-pointer">
+                <div>
+                  <strong className="block text-white">Bolt X Robot Rig</strong>
+                  <span className="text-[11px] text-zinc-400">+$8,500</span>
                 </div>
                 <input
-                  type="range"
-                  min="1"
-                  max="6"
-                  value={shootingDays}
-                  onChange={(e) => setShootingDays(Number(e.target.value))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  type="checkbox"
+                  checked={boltMotionControl}
+                  onChange={(e) => setBoltMotionControl(e.target.checked)}
+                  className="w-4 h-4 accent-[#CCFF00]"
+                />
+              </label>
+
+              <label className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between cursor-pointer">
+                <div>
+                  <strong className="block text-white">Dolby Atmos Master</strong>
+                  <span className="text-[11px] text-zinc-400">+$4,500</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={spatialAudioMaster}
+                  onChange={(e) => setSpatialAudioMaster(e.target.checked)}
+                  className="w-4 h-4 accent-[#CCFF00]"
+                />
+              </label>
+
+              <label className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between cursor-pointer">
+                <div>
+                  <strong className="block text-white">FPV Heavy-Lifter Drone</strong>
+                  <span className="text-[11px] text-zinc-400">+$5,500</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={droneHeavyLifter}
+                  onChange={(e) => setDroneHeavyLifter(e.target.checked)}
+                  className="w-4 h-4 accent-[#CCFF00]"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Form and Submission */}
+          <form onSubmit={handleProposalSubmit} className="pt-6 border-t border-white/10 space-y-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-zinc-400 mb-1">Your Name</label>
+                <input
+                  type="text"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#CCFF00]"
+                  required
                 />
               </div>
-
-              <div className="space-y-2">
-                <span className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1">
-                  Add-on Modules
-                </span>
-                <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer text-xs">
-                  <span>Licensed FPV Pursuit Drone (+$3,500)</span>
-                  <input
-                    type="checkbox"
-                    checked={droneIncluded}
-                    onChange={(e) => setDroneIncluded(e.target.checked)}
-                    className="accent-amber-500 rounded"
-                  />
-                </label>
-                <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer text-xs">
-                  <span>Spatial Audio & Dolby Master (+$2,500)</span>
-                  <input
-                    type="checkbox"
-                    checked={soundDesign}
-                    onChange={(e) => setSoundDesign(e.target.checked)}
-                    className="accent-amber-500 rounded"
-                  />
-                </label>
-                <label className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer text-xs">
-                  <span>Custom Look LUT & Color Grading (+$3,000)</span>
-                  <input
-                    type="checkbox"
-                    checked={colorGrading}
-                    onChange={(e) => setColorGrading(e.target.checked)}
-                    className="accent-amber-500 rounded"
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Total Summary */}
-            <div className="p-8 rounded-2xl bg-zinc-950 border border-amber-500/30 flex flex-col justify-between text-center space-y-6">
               <div>
-                <span className="text-xs font-mono uppercase tracking-widest text-amber-400">
-                  Estimated Production Budget
-                </span>
-                <div className="text-4xl sm:text-5xl font-extrabold font-mono text-white mt-2">
-                  ${estimatedTotal.toLocaleString()}
-                </div>
-                <p className="text-xs text-zinc-400 mt-2">
-                  Includes full director treatment, raw camera packages, location scouting, and multi-format master exports.
-                </p>
-              </div>
-
-              <div className="space-y-3 pt-4 border-t border-white/10">
-                <button
-                  onClick={() => {
-                    setContactMessage(`Hi Vehicular Media team, I would like to move forward with a ${serviceTier} package spanning ${shootingDays} days with estimated budget $${estimatedTotal.toLocaleString()}.`);
-                    const formEl = document.getElementById("contact");
-                    formEl?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-transform active:scale-95"
-                >
-                  Lock in this Estimate →
-                </button>
+                <label className="block text-zinc-400 mb-1">Corporate Email</label>
+                <input
+                  type="email"
+                  value={clientEmail}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#CCFF00]"
+                  required
+                />
               </div>
             </div>
-          </div>
-        </GlassCard>
-      </section>
 
-      {/* Production Inquiry Form with Mock Resend Integration */}
-      <section id="contact" className="py-24 px-6 max-w-4xl mx-auto">
-        <GlassCard className="p-8 sm:p-12 relative overflow-hidden">
-          <div className="max-w-xl mx-auto space-y-6 text-center">
-            <GlowingBadge variant="amber">COMMISSIONS OPEN</GlowingBadge>
-            <h2 className="text-3xl sm:text-4xl font-bold font-display">
-              Initiate a Project Commission
-            </h2>
-            <p className="text-sm text-zinc-400">
-              Submit your project brief below. Our team dispatches an automated proposal receipt to your email via the integrated email service.
-            </p>
-
-            {contactSubmitted ? (
-              <div className="p-8 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-center space-y-3">
-                <CheckCircle2 size={36} className="mx-auto text-emerald-400" />
-                <h4 className="text-lg font-bold text-white">Proposal Dispatched!</h4>
-                <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                  A receipt has been dispatched to <strong className="text-white">{contactEmail}</strong>. You can inspect the email payload in the floating "API Setup" drawer!
-                </p>
-                <button
-                  onClick={() => setContactSubmitted(false)}
-                  className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white"
-                >
-                  Send Another Inquiry
-                </button>
+            <div className="flex items-center justify-between pt-4 border-t border-white/10">
+              <div>
+                <span className="text-zinc-500 uppercase tracking-widest text-[10px] block">
+                  Estimated Production Budget:
+                </span>
+                <span className="font-display text-2xl sm:text-3xl font-extrabold text-[#CCFF00]">
+                  ${estimatedProposalTotal.toLocaleString()}
+                </span>
               </div>
-            ) : (
-              <form onSubmit={handleContactSubmit} className="space-y-4 text-left">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-300">Your Name</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Christian Von Koenigsegg"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-zinc-300">Work Email</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="name@marquecars.com"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-zinc-300">Project Brief & Details</label>
-                  <textarea
-                    rows={4}
-                    required
-                    placeholder="Describe vehicle type, target shoot locations, visual reference films, and target delivery deadline..."
-                    value={contactMessage}
-                    onChange={(e) => setContactMessage(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 resize-none"
-                  />
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25 transition-transform active:scale-95"
-                  >
-                    {isSubmitting ? "Transmitting Proposal..." : "Submit Project Commission →"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </GlassCard>
+              <button
+                type="submit"
+                disabled={isSubmittingProposal}
+                className="px-6 py-3.5 rounded-full bg-[#CCFF00] hover:bg-[#b8e600] text-[#060709] font-bold text-xs tracking-widest uppercase transition-transform active:scale-95 shadow-xl shadow-[#CCFF00]/10 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSubmittingProposal ? "Compiling Dossier..." : "Submit Production Dossier"}
+                <ArrowRight size={13} />
+              </button>
+            </div>
+          </form>
+        </div>
       </section>
 
-      {/* Case Study Detail Modal */}
+      {/* Case File Deep-Dive Modal */}
       <AnimatePresence>
-        {selectedCaseStudy && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+        {selectedProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-mono">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProject(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-3xl bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-10 shadow-2xl relative my-8 space-y-6"
+              className="relative w-full max-w-3xl bg-[#090B0E] border border-white/20 rounded-2xl shadow-2xl p-6 sm:p-8 z-10 max-h-[92vh] overflow-y-auto space-y-6 text-xs"
             >
-              <button
-                onClick={() => setSelectedCaseStudy(null)}
-                className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-amber-400 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
-                    {selectedCaseStudy.client}
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div>
+                  <span className="text-[#CCFF00] font-bold block mb-0.5">
+                    // CASE FILE {selectedProject.index}
                   </span>
-                  <span className="text-xs text-zinc-500 font-mono">{selectedCaseStudy.year}</span>
+                  <h3 className="font-display text-2xl font-extrabold uppercase text-white">
+                    {selectedProject.title}
+                  </h3>
                 </div>
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="p-1 rounded text-zinc-400 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-                <h2 className="text-2xl sm:text-4xl font-bold font-display text-white">
-                  {selectedCaseStudy.title}
-                </h2>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                <span className="text-zinc-500 uppercase tracking-widest text-[10px] block">
+                  Client & Accolades:
+                </span>
+                <strong className="text-white text-sm block">{selectedProject.client}</strong>
+                <span className="text-[#CCFF00]">{selectedProject.award}</span>
+              </div>
 
-                <p className="text-sm text-zinc-300 leading-relaxed font-light">
-                  {selectedCaseStudy.overview}
-                </p>
+              <p className="text-sm text-zinc-300 leading-relaxed font-light">
+                {selectedProject.description}
+              </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-white/10">
-                  <div>
-                    <h4 className="text-xs font-mono uppercase text-amber-400 mb-2 font-semibold">
-                      Deliverables Provided
-                    </h4>
-                    <ul className="space-y-1.5 text-xs text-zinc-300">
-                      {selectedCaseStudy.deliverables.map((d, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                          <span>{d}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+              {/* Gear Manifest */}
+              <div className="space-y-2">
+                <span className="text-zinc-400 uppercase tracking-wider block">
+                  Camera & Grip Manifest:
+                </span>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-zinc-300">
+                  {selectedProject.gearManifest.map((g) => (
+                    <li key={g} className="flex items-center gap-1.5 bg-white/5 p-2 rounded-lg border border-white/10">
+                      <Check size={12} className="text-[#CCFF00]" />
+                      <span>{g}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                  <div>
-                    <h4 className="text-xs font-mono uppercase text-amber-400 mb-2 font-semibold">
-                      Production Camera Package
-                    </h4>
-                    <ul className="space-y-1.5 text-xs text-zinc-300">
-                      {selectedCaseStudy.gear.map((g, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <Film size={13} className="text-amber-400 shrink-0" />
-                          <span>{g}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+              {/* Quote */}
+              <blockquote className="p-4 rounded-xl bg-[#CCFF00]/5 border-l-2 border-[#CCFF00] text-zinc-200 italic">
+                « {selectedProject.clientQuote} »
+              </blockquote>
 
-                <div className="pt-6 border-t border-white/10 flex justify-between items-center text-xs text-zinc-400 font-mono">
-                  <span>Vehicular Media Production Archive · Case Study #{selectedCaseStudy.id}</span>
-                  <button
-                    onClick={() => setActiveVideoModal(selectedCaseStudy.title)}
-                    className="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 font-bold hover:bg-amber-400"
-                  >
-                    Play Reel
-                  </button>
-                </div>
+              <div className="pt-4 border-t border-white/10 flex justify-end">
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="px-5 py-2.5 rounded-full bg-white text-[#060709] font-bold"
+                >
+                  Close Dossier
+                </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Video Modal Preview */}
+      {/* Confirmed Proposal Modal */}
       <AnimatePresence>
-        {activeVideoModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-          >
-            <div className="relative w-full max-w-4xl bg-zinc-950 border border-white/20 rounded-2xl overflow-hidden p-6 shadow-2xl space-y-4">
+        {proposalConfirmed && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-mono">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setProposalConfirmed(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-[#090B0E] border border-[#CCFF00] rounded-2xl shadow-2xl p-6 text-center space-y-4 z-10 text-xs"
+            >
+              <div className="w-14 h-14 mx-auto rounded-full bg-[#CCFF00]/10 border border-[#CCFF00] text-[#CCFF00] flex items-center justify-center">
+                <CheckCircle2 size={32} />
+              </div>
+
+              <h4 className="font-display text-2xl font-extrabold uppercase text-white">
+                Dossier Received
+              </h4>
+
+              <p className="text-zinc-400">
+                Your commission proposal #{proposalConfirmed.ref} has been routed to Executive Creative Director. A confirmation packet has been dispatched to{" "}
+                <strong className="text-white">{proposalConfirmed.email}</strong>.
+              </p>
+
               <button
-                onClick={() => setActiveVideoModal(null)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
-                aria-label="Close modal"
+                onClick={() => setProposalConfirmed(null)}
+                className="w-full py-3 rounded-full bg-[#CCFF00] text-[#060709] font-bold uppercase tracking-wider"
               >
-                <X size={20} />
+                Return to Studio
               </button>
-
-              <div className="flex items-center gap-2">
-                <GlowingBadge variant="amber">SHOWREEL PLAYER</GlowingBadge>
-                <span className="text-sm font-display font-bold text-white">
-                  {activeVideoModal}
-                </span>
-              </div>
-
-              <div className="aspect-video w-full rounded-xl bg-zinc-900 border border-white/10 flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 via-zinc-900 to-black" />
-                <div className="relative z-10 space-y-3">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-amber-500 flex items-center justify-center text-zinc-950 shadow-xl shadow-amber-500/40">
-                    <Play size={24} fill="currentColor" />
-                  </div>
-                  <p className="text-lg font-bold text-white">
-                    Playing Master 4K Cinema Reel: {activeVideoModal}
-                  </p>
-                  <p className="text-xs text-zinc-400 font-mono">
-                    Mastered at 3840x2160 · 24.000 fps · ProRes 422 HQ
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center text-xs text-zinc-400 pt-2 font-mono">
-                <span>Vehicular Media Production Archive</span>
-                <button
-                  onClick={() => setActiveVideoModal(null)}
-                  className="hover:text-white"
-                >
-                  Close Preview [ESC]
-                </button>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
   );
 };
-
-export default PortfolioDemo;

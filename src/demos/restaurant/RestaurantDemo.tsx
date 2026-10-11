@@ -1,14 +1,5 @@
 import React, { useState } from "react";
 import confetti from "canvas-confetti";
-import {
-  BubbleReveal,
-  MovingBorderButton,
-  Spotlight,
-  GlassCard,
-  Magnetic,
-  GlowingBadge,
-  TextReveal,
-} from "../../components";
 import { sendEmail } from "../../services/emailService";
 import {
   UtensilsCrossed,
@@ -25,561 +16,900 @@ import {
   Filter,
   X,
   Phone,
+  Compass,
+  Star,
+  Check,
+  BookOpen,
+  Eye,
+  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Dish {
   id: string;
-  name: string;
-  course: string;
-  category: "starter" | "main" | "dessert" | "wine";
+  actNumber: string;
+  courseTitle: string;
+  frenchName: string;
+  englishTitle: string;
   description: string;
-  ingredients: string;
-  price: string;
-  pairing: string;
+  secretIngredients: string[];
+  priceEUR: number;
+  sommelierPairing: {
+    wine: string;
+    vintage: string;
+    region: string;
+    notes: string;
+  };
+  flavorProfile: {
+    umami: number;
+    crispness: number;
+    aroma: string;
+    temperature: string;
+  };
   dietary: string[];
-  highlight?: boolean;
+  isSignature?: boolean;
+}
+
+interface SeatingZone {
+  id: string;
+  name: string;
+  frenchTitle: string;
+  description: string;
+  capacity: string;
+  ambiance: string;
+  surchargeEUR: number;
 }
 
 export const RestaurantDemo: React.FC = () => {
-  const [activeMenuCategory, setActiveMenuCategory] = useState<string>("all");
-  const [dietaryFilter, setDietaryFilter] = useState<string>("all");
+  const [activeAct, setActiveAct] = useState<string>("act-1");
+  const [expandedDishId, setExpandedDishId] = useState<string | null>("d-1");
   const [isReservationOpen, setIsReservationOpen] = useState(false);
+  const [selectedSeatingId, setSelectedSeatingId] = useState<string>("counter");
 
-  // Reservation details
-  const [guestCount, setGuestCount] = useState(2);
-  const [reservationDate, setReservationDate] = useState("2026-10-18");
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState("19:30");
-  const [seatingArea, setSeatingArea] = useState("Chef's Counter");
-  const [guestName, setGuestName] = useState("Lady Eleanor Fairfax");
-  const [guestEmail, setGuestEmail] = useState("eleanor@fairfaxestate.com");
-  const [guestPhone, setGuestPhone] = useState("+33 1 42 68 55 00");
-  const [dietaryNotes, setDietaryNotes] = useState("No shellfish for 1 guest, anniversary celebration");
-  const [reservationConfirmed, setReservationConfirmed] = useState<any>(null);
-  const [isBooking, setIsBooking] = useState(false);
+  // Reservation Form State
+  const [guestCount, setGuestCount] = useState<number>(2);
+  const [reservationDate, setReservationDate] = useState<string>("2026-10-24");
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("19:30");
+  const [guestName, setGuestName] = useState<string>("Countess Vivienne de Valois");
+  const [guestEmail, setGuestEmail] = useState<string>("vivienne.valois@palais.fr");
+  const [guestPhone, setGuestPhone] = useState<string>("+33 1 42 68 55 22");
+  const [sommelierPairingOptIn, setSommelierPairingOptIn] = useState<boolean>(true);
+  const [dietaryNotes, setDietaryNotes] = useState<string>("Pescetarian preference for one guest; Anniversary celebration.");
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState<boolean>(false);
+  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
 
-  const menuItems: Dish[] = [
+  const seatingZones: SeatingZone[] = [
     {
-      id: "d1",
-      course: "PRELUDE",
-      category: "starter",
-      name: "Hokkaido Sea Urchin & Smoked Dashi",
-      description: "Hokkaido uni nestled over crisp kelp pastry with oscietra caviar and yuzu emulsion.",
-      ingredients: "Hokkaido Uni, Sturia Caviar, Wild Kombu, Finger Lime",
-      price: "$45",
-      pairing: "Champagne Krug Grande Cuvée 170th Edition",
-      dietary: ["pescatarian"],
-      highlight: true,
+      id: "counter",
+      name: "The Chef's Counter",
+      frenchTitle: "Le Comptoir de l'Âtre",
+      description: "Front-row culinary theater facing the Japanese Binchotan open hearth. Direct interaction with Chef de Cuisine Julien Moreau.",
+      capacity: "Only 8 Seats Nightly",
+      ambiance: "Dynamic & Intimate",
+      surchargeEUR: 0,
     },
     {
-      id: "d2",
-      course: "EARTH",
-      category: "starter",
-      name: "Charred Morel & Roasted Bone Marrow",
-      description: "Forest-foraged spring morels stuffed with veal sweetbreads, glazed in 48-hour black truffle reduction.",
-      ingredients: "Morel Mushrooms, Périgord Black Truffle, Vin Jaune, Aged Brioche",
-      price: "$52",
-      pairing: "Domaine Leflaive Puligny-Montrachet 2020",
-      dietary: ["gluten-free available"],
+      id: "solarium",
+      name: "The Glass Solarium",
+      frenchTitle: "Le Jardin de Cristal",
+      description: "Under a 19th-century wrought-iron skylight surrounded by climbing jasmine and candlelit travertine fountains.",
+      capacity: "14 Tables Available",
+      ambiance: "Romantic & Starlit",
+      surchargeEUR: 25,
     },
     {
-      id: "d3",
-      course: "OCEAN",
-      category: "main",
-      name: "Butter-Poached Brittany Blue Lobster",
-      description: "Tail gently poached in seaweed butter, charred baby leeks, and fermented bisque emulsion.",
-      ingredients: "Blue Lobster, White Asparagus, Fermented Citrus, Saffron Oil",
-      price: "$68",
-      pairing: "Chassagne-Montrachet 1er Cru 2019",
-      dietary: ["pescatarian", "gluten-free"],
-      highlight: true,
-    },
-    {
-      id: "d4",
-      course: "HERITAGE",
-      category: "main",
-      name: "A5 Miyazaki Wagyu over Binchotan",
-      description: "Charcoal-kissed ribeye served with fermented black garlic paste and smoked potato emulsion.",
-      ingredients: "Miyazaki A5 Wagyu, Black Garlic, Smoked Butter, Mountain Wasabi",
-      price: "$85",
-      pairing: "Château Pontet-Canet Pauillac 2015",
-      dietary: ["gluten-free"],
-      highlight: true,
-    },
-    {
-      id: "d5",
-      course: "BOTANICAL",
-      category: "starter",
-      name: "Heirloom Beet Tartare & Smoked Almond",
-      description: "Slow-roasted salt-crusted beets, fermented elderberry gastrique, and cultured almond curd.",
-      ingredients: "Yellow & Chioggia Beets, Elderberry, Marcona Almonds",
-      price: "$38",
-      pairing: "Domaine Vacheron Sancerre 2022",
-      dietary: ["vegan", "gluten-free"],
-    },
-    {
-      id: "d6",
-      course: "FINALE",
-      category: "dessert",
-      name: "Smoked Vanilla Bean & Smoked Caramel",
-      description: "Madagascar bourbon vanilla quenelle with bitter cocoa soil and single-malt Islay peat mist.",
-      ingredients: "Tahitian Vanilla, 72% Venezuelan Cacao, Laphroaig Mist",
-      price: "$32",
-      pairing: "Château d'Yquem Sauternes 2011",
-      dietary: ["vegetarian"],
+      id: "cellar",
+      name: "The Vaulted Cellar Crypt",
+      frenchTitle: "Le Caveau Historique",
+      description: "Carved into 17th-century subterranean limestone cellars housing over 4,500 Grand Cru bottles. Private dedicated sommelier.",
+      capacity: "3 Private Vaults",
+      ambiance: "Secluded & Reverent",
+      surchargeEUR: 60,
     },
   ];
 
-  const timeSlots = [
-    { time: "18:00", available: "3 tables" },
-    { time: "18:30", available: "1 table left" },
-    { time: "19:30", available: "Chef's counter only" },
-    { time: "20:30", available: "Available" },
-    { time: "21:15", available: "Late seating" },
+  const menuActs = [
+    {
+      id: "act-1",
+      number: "I",
+      frenchTitle: "Les Préludes & L'Océan",
+      englishTitle: "Preludes & Coastal Foraging",
+      dishes: [
+        {
+          id: "d-1",
+          actNumber: "Acte I",
+          courseTitle: "PRELUDE",
+          frenchName: "L'Oursin d'Hokkaido & Caviar Osciètre Impérial",
+          englishTitle: "Hokkaido Sea Urchin & Imperial Oscietra Caviar",
+          description: "Fresh sea urchin roe nested in charred kelp crisp, finished with smoked dashi jelly and kalamansi citrus essence.",
+          secretIngredients: ["Hokkaido Uni", "Imperial Oscietra", "Aged Binchotan Kelp", "Finger Lime"],
+          priceEUR: 65,
+          sommelierPairing: {
+            wine: "Champagne Krug Grande Cuvée",
+            vintage: "171ème Édition",
+            region: "Reims, France",
+            notes: "Toasted brioche, hazelnut, and intense minerality cutting through rich marine uni.",
+          },
+          flavorProfile: {
+            umami: 10,
+            crispness: 8,
+            aroma: "Briny Sea Spray & Hazelnut",
+            temperature: "Chilled (10°C)",
+          },
+          dietary: ["Pescatarian"],
+          isSignature: true,
+        },
+        {
+          id: "d-2",
+          actNumber: "Acte I",
+          courseTitle: "FORAGE",
+          frenchName: "La Morille des Bois & Moelle Fumée",
+          englishTitle: "Forest Morel Mushroom & Smoked Marrow Glaze",
+          description: "Spring morels hand-stuffed with sweetbread mousseline, poached in 24-year Vin Jaune with winter savory.",
+          secretIngredients: ["Wild Pyrenees Morels", "Veal Marrow", "Jura Vin Jaune 2002", "Alpine Chervil"],
+          priceEUR: 58,
+          sommelierPairing: {
+            wine: "Domaine Macle Château-Chalon",
+            vintage: "2014",
+            region: "Jura, France",
+            notes: "Walnut skin, curry leaf, and oxidised gold mirroring the deep morel earthiness.",
+          },
+          flavorProfile: {
+            umami: 9,
+            crispness: 4,
+            aroma: "Damp Pine Forest & Smoke",
+            temperature: "Warm (54°C)",
+          },
+          dietary: ["Gluten-Free Available"],
+        },
+      ],
+    },
+    {
+      id: "act-2",
+      number: "II",
+      frenchTitle: "Le Terroir & L'Âtre",
+      englishTitle: "The Hearth & Ancient Terroir",
+      dishes: [
+        {
+          id: "d-3",
+          actNumber: "Acte II",
+          courseTitle: "THE HEARTH",
+          frenchName: "Homard Bleu de Bretagne au Beurre Noisette",
+          englishTitle: "Brittany Blue Lobster over Charcoal Embers",
+          description: "Tail flash-seared over cherrywood coals, accompanied by glazed Tokyo turnips and fermented elderberry coral emulsion.",
+          secretIngredients: ["Brittany Blue Lobster", "AOP Isigny Butter", "Elderberry Reduction", "Baby White Turnips"],
+          priceEUR: 88,
+          sommelierPairing: {
+            wine: "Domaine Leflaive Puligny-Montrachet",
+            vintage: "2020",
+            region: "Burgundy, France",
+            notes: "Crushed chalk, white blossoms, and silky citrus texture highlighting sweet lobster flesh.",
+          },
+          flavorProfile: {
+            umami: 9,
+            crispness: 6,
+            aroma: "Sweet Smoked Shellfish & Butter",
+            temperature: "Searing Hot (62°C)",
+          },
+          dietary: ["Pescatarian", "Gluten-Free"],
+          isSignature: true,
+        },
+        {
+          id: "d-4",
+          actNumber: "Acte II",
+          courseTitle: "SACRED EARTH",
+          frenchName: "Bœuf Wagyu A5 de Kagoshima au Sarment de Vigne",
+          englishTitle: "Kagoshima Wagyu A5 over Dried Grapevines",
+          description: "Snow beef ribeye smoked over aged Meursault vine shoots, black Périgord truffle mille-feuille, and fermented allium jus.",
+          secretIngredients: ["Kagoshima Wagyu A5", "Périgord Black Truffle", "Aged Shallot Ash", "Vin de Banyuls"],
+          priceEUR: 110,
+          sommelierPairing: {
+            wine: "Château Palmer Margaux",
+            vintage: "2010",
+            region: "Bordeaux, France",
+            notes: "Velvety cedar, dark cassis, and aristocratic graphite tannins melting the marbled A5 fat.",
+          },
+          flavorProfile: {
+            umami: 10,
+            crispness: 7,
+            aroma: "Roasted Cedar, Truffle & Charcoal",
+            temperature: "Medium Rare (52°C)",
+          },
+          dietary: ["Gluten-Free"],
+          isSignature: true,
+        },
+      ],
+    },
+    {
+      id: "act-3",
+      number: "III",
+      frenchTitle: "L'Éphémère & Les Douceurs",
+      englishTitle: "Transcendence & Final Confections",
+      dishes: [
+        {
+          id: "d-5",
+          actNumber: "Acte III",
+          courseTitle: "CLEANSER",
+          frenchName: "Granité de Shiso Vert & Yuzu Givré",
+          englishTitle: "Wild Green Shiso Snow & Frozen Yuzu Pearls",
+          description: "A palate awakening of alpine frost, wild mint crystallised in liquid nitrogen, and 30-year Mirin elixir.",
+          secretIngredients: ["Green Shiso", "Kochi Yuzu", "Liquid Nitrogen Herb Snow", "Aged Mirin"],
+          priceEUR: 32,
+          sommelierPairing: {
+            wine: "Junmai Daiginjo Born Gold",
+            vintage: "Special Reserve",
+            region: "Fukui, Japan",
+            notes: "Crisp green apple and crystalline mountain spring water finish.",
+          },
+          flavorProfile: {
+            umami: 2,
+            crispness: 10,
+            aroma: "Frozen Citrus & Alpine Mint",
+            temperature: "Sub-Zero (-4°C)",
+          },
+          dietary: ["Vegan", "Gluten-Free"],
+        },
+        {
+          id: "d-6",
+          actNumber: "Acte III",
+          courseTitle: "FINALE",
+          frenchName: "Cacao Criollo de Chuao & Truffe Noire Givrée",
+          englishTitle: "Venezuelan Criollo Cacao & Frozen Truffle Soufflé",
+          description: "Warm 74% pure harvest molten sphere with bitter orange blossom mist, golden hazelnut praline, and shaved fresh Périgord truffle.",
+          secretIngredients: ["Chuao 74% Chocolate", "Périgord Truffle", "Fleur de Sel de Guérande", "24k Gold Leaf"],
+          priceEUR: 42,
+          sommelierPairing: {
+            wine: "Château d'Yquem Sauternes",
+            vintage: "2009",
+            region: "Bordeaux, France",
+            notes: "Candied saffron, dried apricot, and liquid amber balancing pure dark cocoa.",
+          },
+          flavorProfile: {
+            umami: 7,
+            crispness: 5,
+            aroma: "Dark Smoke, Vanilla & Cacao",
+            temperature: "Warm Heart with Glace (48°C)",
+          },
+          dietary: ["Vegetarian"],
+          isSignature: true,
+        },
+      ],
+    },
   ];
 
-  const filteredMenu = menuItems.filter((item) => {
-    const matchesCat = activeMenuCategory === "all" || item.category === activeMenuCategory;
-    const matchesDiet = dietaryFilter === "all" || item.dietary.includes(dietaryFilter);
-    return matchesCat && matchesDiet;
-  });
+  const currentActData = menuActs.find((a) => a.id === activeAct) || menuActs[0];
+  const selectedZone = seatingZones.find((z) => z.id === selectedSeatingId) || seatingZones[0];
 
-  const handleBookReservation = async (e: React.FormEvent) => {
+  const degustationBasePriceEUR = 280;
+  const winePairingPriceEUR = sommelierPairingOptIn ? 185 : 0;
+  const totalPerGuestEUR = degustationBasePriceEUR + winePairingPriceEUR + selectedZone.surchargeEUR;
+  const grandTotalEstimateEUR = totalPerGuestEUR * guestCount;
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsBooking(true);
+    setIsSubmittingBooking(true);
 
-    const confirmationId = `RES-${Math.floor(Math.random() * 90000 + 10000)}`;
+    const bookingRef = `RES-MICHELIN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    await sendEmail({
-      to: guestEmail,
-      subject: `Table Reservation Confirmed: ${confirmationId} · L'Atelier Noir`,
-      template: "table_reservation",
-      data: {
-        confirmationId,
-        guestName,
+    try {
+      await sendEmail({
+        to: guestEmail,
+        subject: `Table Confirmation ${bookingRef} — L'Étoile Noire (III Étoiles Michelin)`,
+        template: "order_confirmation",
+        data: {
+          customerName: guestName,
+          shippingAddress: `${selectedZone.name} · ${reservationDate} at ${selectedTimeSlot}`,
+          amountPaid: `€${grandTotalEstimateEUR} (Estimated Degustation for ${guestCount} Guests)`,
+          chargeId: bookingRef,
+          last4: "TABLE-RES",
+          items: [
+            `Grand Menu Dégustation (x${guestCount})`,
+            sommelierPairingOptIn ? `Sommelier Grand Cru Pairing (x${guestCount})` : "Wine à la carte",
+            `Seating: ${selectedZone.frenchTitle}`,
+          ],
+        },
+      });
+
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#D4AF37", "#FFFFFF", "#8B1E3F", "#C5A880"],
+      });
+
+      setConfirmedBooking({
+        ref: bookingRef,
+        name: guestName,
+        email: guestEmail,
         date: reservationDate,
         time: selectedTimeSlot,
-        guests: `${guestCount} Guests`,
-        seatingArea,
-        notes: dietaryNotes,
-      },
-    });
+        guests: guestCount,
+        zone: selectedZone.name,
+        pairing: sommelierPairingOptIn,
+        total: grandTotalEstimateEUR,
+      });
 
-    confetti({
-      particleCount: 110,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
-
-    setReservationConfirmed({
-      id: confirmationId,
-      name: guestName,
-      date: reservationDate,
-      time: selectedTimeSlot,
-      guests: guestCount,
-      seating: seatingArea,
-    });
-
-    setIsBooking(false);
+      setIsSubmittingBooking(false);
+    } catch (err: any) {
+      setIsSubmittingBooking(false);
+      alert(err.message || "Reservation transmission failed");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#090a0c] text-white">
-      {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-yellow-600/10 blur-[150px] rounded-full pointer-events-none" />
-
-        <div className="relative z-10 max-w-4xl mx-auto space-y-6">
-          <div className="flex justify-center">
-            <GlowingBadge variant="amber">TWO MICHELIN STARS · 2026 EDITION</GlowingBadge>
-          </div>
-
-          <p className="font-serif italic text-lg sm:text-xl text-yellow-200/80 tracking-wide">
-            L'Atelier Noir
-          </p>
-
-          <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-[#fefce8]">
-            <TextReveal text="Where Fire Meets Foraged Harmony" />
-          </h1>
-
-          <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto font-light leading-relaxed">
-            An intimate culinary laboratory pairing wood-fired gastronomy with world-class biodynamic viticulture and live table booking.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Magnetic strength={0.3}>
-              <button
-                onClick={() => {
-                  setReservationConfirmed(null);
-                  setIsReservationOpen(true);
-                }}
-                className="px-8 py-3.5 rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-zinc-950 font-bold text-sm shadow-xl shadow-yellow-500/20 transition-all hover:scale-105 active:scale-95"
-              >
-                Book Table Online
-              </button>
-            </Magnetic>
-
-            <Magnetic strength={0.3}>
-              <a
-                href="#menu"
-                className="px-8 py-3.5 rounded-full border border-yellow-500/30 hover:border-yellow-500/60 bg-white/5 hover:bg-white/10 text-yellow-200 font-medium text-sm transition-all"
-              >
-                Explore Full Menu
-              </a>
-            </Magnetic>
-          </div>
-        </div>
-
-        {/* Operating detail bar */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 text-xs text-zinc-500 font-mono hidden sm:flex">
-          <span className="flex items-center gap-1.5">
-            <Clock size={13} className="text-amber-400" /> Tuesday - Sunday 18:00 - 23:30
-          </span>
-          <span>·</span>
-          <span className="flex items-center gap-1.5">
-            <MapPin size={13} className="text-amber-400" /> 42 Rue Saint-Honoré, Paris
-          </span>
-        </div>
-      </section>
-
-      {/* Bubble Reveal Interactive Plate Explorer */}
-      <section className="py-20 px-6 max-w-5xl mx-auto">
-        <div className="text-center mb-10 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            Culinary Microscope
-          </span>
-          <h2 className="text-3xl font-bold font-serif text-[#fefce8]">
-            Interactive Dish Revealer
-          </h2>
-          <p className="text-sm text-zinc-400 max-w-md mx-auto">
-            Hover your cursor over the plate to uncover secret foraging sources, rare truffles, and bespoke wine pairings.
-          </p>
-        </div>
-
-        <div className="h-[420px] w-full rounded-2xl overflow-hidden border border-yellow-500/20 relative shadow-2xl bg-zinc-950">
-          <BubbleReveal
-            size={220}
-            ringColor="rgba(234, 179, 8, 0.4)"
-            overlayContent={
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 text-center relative">
-                <div className="w-14 h-14 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 mb-4 animate-pulse">
-                  <UtensilsCrossed size={22} />
-                </div>
-                <h3 className="text-2xl font-bold font-serif text-[#fefce8] mb-2">
-                  THE FINISHED PLATING
-                </h3>
-                <p className="text-sm text-zinc-400 max-w-md">
-                  Miyazaki A5 Wagyu wrapped in burnt leek ash with golden chanterelles.
-                </p>
-                <div className="mt-4 px-3.5 py-1 rounded-full bg-yellow-500/15 text-yellow-300 text-xs font-mono border border-yellow-500/30">
-                  Hover anywhere on the plate to inspect origin provenance
-                </div>
-              </div>
-            }
-          >
-            <div className="w-full h-full bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 flex flex-col items-center justify-center p-8 text-center">
-              <h3 className="text-2xl font-bold font-serif text-yellow-200 mb-2">
-                PROVENANCE & FORAGING DATA
-              </h3>
-              <p className="text-sm text-zinc-300 max-w-md">
-                Chanterelles foraged 6 hours ago in the Vosges mountains. Wagyu aged 45 days in Himalayan salt chamber.
-              </p>
-              <div className="mt-4 px-3.5 py-1 rounded-full bg-white/20 text-white text-xs font-mono">
-                Sommelier Pairing: Hermitage La Chapelle 2014
-              </div>
+    <div className="min-h-screen bg-[#0A0708] text-[#F3EFE6] font-serif selection:bg-[#D4AF37]/30 selection:text-[#F3EFE6]">
+      {/* Michelin Crest Header */}
+      <header className="border-b border-[#D4AF37]/20 bg-[#0A0708]/95 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full border border-[#D4AF37] flex items-center justify-center text-[#D4AF37] bg-[#160D10] shadow-lg shadow-[#D4AF37]/10">
+              <Sparkles size={18} />
             </div>
-          </BubbleReveal>
-        </div>
-      </section>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-normal tracking-wide text-[#F3EFE6]">
+                  L'Étoile Noire
+                </h1>
+                <div className="flex items-center gap-0.5 text-[#D4AF37]" title="Trois Étoiles Michelin">
+                  <Star size={11} className="fill-[#D4AF37]" />
+                  <Star size={11} className="fill-[#D4AF37]" />
+                  <Star size={11} className="fill-[#D4AF37]" />
+                </div>
+              </div>
+              <p className="text-[10px] font-sans uppercase tracking-[0.2em] text-[#D4AF37]/80">
+                Gastronomie d'Auteur · Paris VIIIe
+              </p>
+            </div>
+          </div>
 
-      {/* Menu Showcase with Filters */}
-      <section id="menu" className="py-20 px-6 max-w-6xl mx-auto">
-        <div className="text-center mb-12 space-y-3">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            A La Carte & Tasting
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-bold font-serif text-[#fefce8]">
-            Autumn Gastronomy Menu
+          <div className="hidden lg:flex items-center gap-8 text-xs font-sans tracking-widest text-[#E8DFC8]">
+            <span className="flex items-center gap-1.5">
+              <Clock size={13} className="text-[#D4AF37]" />
+              <span>Service: 19h00 — 23h30</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <MapPin size={13} className="text-[#D4AF37]" />
+              <span>18 Place Vendôme, Paris</span>
+            </span>
+          </div>
+
+          <button
+            onClick={() => setIsReservationOpen(true)}
+            className="px-5 py-2.5 rounded-full border border-[#D4AF37] bg-gradient-to-r from-[#D4AF37]/20 to-[#D4AF37]/10 hover:from-[#D4AF37] hover:to-[#B89628] hover:text-[#0A0708] text-[#D4AF37] text-xs font-sans tracking-widest uppercase transition-all duration-300 shadow-lg shadow-[#D4AF37]/10 active:scale-95"
+          >
+            Réserver Une Table
+          </button>
+        </div>
+      </header>
+
+      {/* Atmospheric Atelier Hero */}
+      <section className="relative py-20 sm:py-28 px-4 sm:px-8 border-b border-[#D4AF37]/20 overflow-hidden bg-gradient-to-b from-[#140A0F] via-[#0A0708] to-[#0A0708]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(212,175,55,0.12),transparent_70%)] pointer-events-none" />
+
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8">
+          <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-[#D4AF37]/30 bg-[#160D10]/80 text-[#D4AF37] text-xs font-sans tracking-widest uppercase">
+            <span>Guide Michelin 2026</span>
+            <span>•</span>
+            <span>Trois Étoiles Confirmées</span>
+            <span>•</span>
+            <span>19.5/20 Gault & Millau</span>
+          </div>
+
+          <h2 className="text-4xl sm:text-6xl lg:text-7xl font-normal leading-[1.1] tracking-tight text-[#F3EFE6]">
+            La Poésie du Feu & <br />
+            <span className="italic text-[#D4AF37] font-light">du Terroir Sacré.</span>
           </h2>
-          <p className="text-sm text-zinc-400">
-            Filtered by course category and dietary preferences with sommelier pairings.
+
+          <p className="text-base sm:text-lg text-[#C8BFAC] font-light italic max-w-2xl mx-auto leading-relaxed">
+            « La gastronomie est l’art de capturer l’éphémère — le parfum du feu de sarment de vigne, la brume marine d'Hokkaido, et la mémoire d'un millésime endormi. »
           </p>
 
-          {/* Category Tabs */}
-          <div className="flex flex-wrap justify-center gap-2 pt-4">
-            {[
-              { id: "all", label: "All Offerings" },
-              { id: "starter", label: "Preludes & Starters" },
-              { id: "main", label: "Wood-Fired Mains" },
-              { id: "dessert", label: "Desserts & Cheeses" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveMenuCategory(tab.id)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-                  activeMenuCategory === tab.id
-                    ? "bg-yellow-500 text-zinc-950 shadow-md shadow-yellow-500/20"
-                    : "bg-white/5 text-zinc-400 hover:text-white"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <p className="text-xs font-sans tracking-widest text-[#D4AF37] uppercase">
+            Julien Moreau — Chef de Cuisine
+          </p>
 
-          {/* Dietary Filter */}
-          <div className="flex justify-center items-center gap-2 pt-2 text-xs">
-            <Filter size={13} className="text-amber-400" />
-            <span className="text-zinc-500">Dietary:</span>
-            {["all", "gluten-free", "pescatarian", "vegan"].map((diet) => (
-              <button
-                key={diet}
-                onClick={() => setDietaryFilter(diet)}
-                className={`px-2.5 py-0.5 rounded text-[11px] font-mono capitalize ${
-                  dietaryFilter === diet
-                    ? "text-yellow-300 font-bold underline"
-                    : "text-zinc-500 hover:text-zinc-300"
-                }`}
-              >
-                {diet}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Menu list */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredMenu.map((dish) => (
-            <Spotlight
-              key={dish.id}
-              className={`p-6 transition-all ${
-                dish.highlight ? "border-yellow-500/30 bg-yellow-500/[0.02]" : ""
-              }`}
+          {/* Quick Table Availability Pill */}
+          <div className="pt-4 flex flex-wrap justify-center items-center gap-4">
+            <button
+              onClick={() => setIsReservationOpen(true)}
+              className="px-8 py-3.5 rounded-full bg-[#D4AF37] hover:bg-[#c49f2b] text-[#0A0708] font-sans font-semibold text-xs tracking-widest uppercase transition-transform active:scale-95 shadow-xl shadow-[#D4AF37]/20 flex items-center gap-2"
             >
-              <div className="flex flex-col justify-between h-full space-y-4">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-yellow-400">
-                      {dish.course}
-                    </span>
-                    <span className="text-base font-serif font-bold text-yellow-300">
-                      {dish.price}
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg font-bold font-serif text-[#fefce8] mb-1.5">
-                    {dish.name}
-                  </h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed">
-                    {dish.description}
-                  </p>
-                  <p className="text-[11px] text-zinc-500 font-mono mt-2">
-                    <strong className="text-zinc-400">Provenance:</strong> {dish.ingredients}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-yellow-200/90 font-mono">
-                  <span className="flex items-center gap-1">
-                    <Wine size={12} className="text-yellow-400" /> {dish.pairing}
-                  </span>
-                </div>
-              </div>
-            </Spotlight>
-          ))}
-        </div>
-
-        <div className="mt-12 flex justify-center">
-          <MovingBorderButton
-            onClick={() => {
-              setReservationConfirmed(null);
-              setIsReservationOpen(true);
-            }}
-            borderRadius="2rem"
-            duration={3000}
-            className="text-yellow-300 font-serif font-bold text-base px-8"
-          >
-            Reserve Table Online →
-          </MovingBorderButton>
+              <span>Consulter Les Disponibilités</span>
+              <ChevronRight size={14} />
+            </button>
+            <span className="text-xs font-sans text-[#A89F8E] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>4 tables restantes ce samedi 24 octobre</span>
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* Online Table Reservation Modal with Real-time Slots & Email Dispatch */}
-      <AnimatePresence>
-        {isReservationOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl bg-zinc-950 border border-yellow-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 my-8"
-            >
-              <div className="flex justify-between items-center pb-4 border-b border-white/10">
-                <div className="space-y-1">
-                  <GlowingBadge variant="amber">INSTANT TABLE BOOKING</GlowingBadge>
-                  <h3 className="text-xl font-bold font-serif text-white">
-                    L'Atelier Noir Reservations
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setIsReservationOpen(false)}
-                  className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+      {/* Tasting Menu Degustation Experience */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-8 py-20">
+        {/* Section Heading */}
+        <div className="text-center space-y-3 mb-14">
+          <span className="text-xs font-sans uppercase tracking-[0.3em] text-[#D4AF37]">
+            Menu Dégustation en Sept Temps
+          </span>
+          <h3 className="text-3xl sm:text-4xl font-normal text-[#F3EFE6]">
+            Le Livre Gastronomique
+          </h3>
+          <p className="text-xs font-sans tracking-wider text-[#A89F8E] max-w-md mx-auto">
+            Chaque acte célèbre un élément de la terre, des profondeurs océaniques aux flammes du brasier.
+          </p>
+        </div>
 
-              {reservationConfirmed ? (
-                <div className="py-8 text-center space-y-4">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <CheckCircle2 size={36} />
-                  </div>
-                  <h4 className="text-2xl font-bold font-serif text-white">
-                    Reservation Confirmed!
-                  </h4>
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs font-mono space-y-1 text-left max-w-sm mx-auto">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Confirmation ID:</span>
-                      <strong className="text-amber-400">{reservationConfirmed.id}</strong>
+        {/* Acts Navigation Tabs */}
+        <div className="flex justify-center border-b border-[#D4AF37]/20 mb-12">
+          <div className="flex gap-2 sm:gap-6 overflow-x-auto pb-4">
+            {menuActs.map((act) => (
+              <button
+                key={act.id}
+                onClick={() => setActiveAct(act.id)}
+                className={`flex items-center gap-3 px-5 py-3 rounded-full font-sans text-xs tracking-widest uppercase transition-all whitespace-nowrap ${
+                  activeAct === act.id
+                    ? "bg-[#D4AF37] text-[#0A0708] font-bold shadow-lg shadow-[#D4AF37]/20"
+                    : "text-[#A89F8E] hover:text-[#F3EFE6] bg-[#160D10]/50 border border-white/5"
+                }`}
+              >
+                <span className="font-serif italic text-sm">{act.number}.</span>
+                <span>{act.frenchTitle}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Dishes Stream for Active Act */}
+        <div className="space-y-8">
+          {currentActData.dishes.map((dish) => {
+            const isExpanded = expandedDishId === dish.id;
+
+            return (
+              <div
+                key={dish.id}
+                className="rounded-2xl border border-[#D4AF37]/30 bg-gradient-to-br from-[#140C10] via-[#0E080B] to-[#0A0708] p-6 sm:p-8 transition-all hover:border-[#D4AF37]/60 shadow-xl"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                  {/* Left Column: Dish Title & Gastronomic Story */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-[10px] font-sans uppercase tracking-widest text-[#D4AF37] px-2.5 py-1 rounded-full border border-[#D4AF37]/30 bg-[#1F1015]">
+                        {dish.courseTitle}
+                      </span>
+                      {dish.isSignature && (
+                        <span className="text-[10px] font-sans uppercase tracking-widest text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-950/40">
+                          Création Signature
+                        </span>
+                      )}
+                      {dish.dietary.map((d) => (
+                        <span key={d} className="text-[10px] font-sans text-[#A89F8E]">
+                          • {d}
+                        </span>
+                      ))}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Guest Name:</span>
-                      <span>{reservationConfirmed.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Date & Time:</span>
-                      <span>{reservationConfirmed.date} at {reservationConfirmed.time}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Seating:</span>
-                      <span>{reservationConfirmed.seating} ({reservationConfirmed.guests} Guests)</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-zinc-400">
-                    A confirmation voucher has been dispatched to {guestEmail}. Check your inbox or view it in the floating API drawer!
-                  </p>
-                  <button
-                    onClick={() => setIsReservationOpen(false)}
-                    className="px-6 py-2.5 rounded-full bg-yellow-500 text-zinc-950 font-bold text-xs"
-                  >
-                    Done
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleBookReservation} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
-                      Party Size
-                    </label>
-                    <div className="flex gap-2">
-                      {[1, 2, 4, 6, 8].map((num) => (
-                        <button
-                          key={num}
-                          type="button"
-                          onClick={() => setGuestCount(num)}
-                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border ${
-                            guestCount === num
-                              ? "bg-yellow-500 text-zinc-950 border-yellow-500"
-                              : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
-                          }`}
+
+                    <h4 className="text-2xl sm:text-3xl font-normal text-[#F3EFE6] leading-tight">
+                      {dish.frenchName}
+                    </h4>
+                    <p className="text-sm font-sans text-[#D4AF37] font-light">
+                      {dish.englishTitle}
+                    </p>
+                    <p className="text-sm text-[#C8BFAC] font-light leading-relaxed max-w-2xl italic">
+                      {dish.description}
+                    </p>
+
+                    {/* Key Ingredients Pill Strip */}
+                    <div className="pt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-sans uppercase tracking-widest text-[#A89F8E]">
+                        Composants Notables:
+                      </span>
+                      {dish.secretIngredients.map((ing) => (
+                        <span
+                          key={ing}
+                          className="text-xs font-sans px-2.5 py-0.5 rounded-full bg-[#1A0F14] border border-[#D4AF37]/20 text-[#E8DFC8]"
                         >
-                          {num} {num === 1 ? "Guest" : "Guests"}
-                        </button>
+                          {ing}
+                        </span>
                       ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Right Column: Price & Toggle Sensor Radar */}
+                  <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-4 pt-4 lg:pt-0 border-t lg:border-t-0 border-[#D4AF37]/15">
+                    <span className="text-2xl font-serif text-[#D4AF37]">
+                      €{dish.priceEUR}
+                    </span>
+
+                    <button
+                      onClick={() => setExpandedDishId(isExpanded ? null : dish.id)}
+                      className="px-4 py-2 rounded-full border border-[#D4AF37]/40 bg-[#1F1015] hover:bg-[#D4AF37] hover:text-[#0A0708] text-[#D4AF37] text-xs font-sans tracking-wider uppercase transition-colors flex items-center gap-2"
+                    >
+                      <BookOpen size={13} />
+                      <span>{isExpanded ? "Fermer Notes" : "Notes du Sommelier"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expanded Sommelier & Flavor Sensor Drawer */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-6 pt-6 border-t border-[#D4AF37]/20 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden"
+                    >
+                      {/* Wine Pairing */}
+                      <div className="bg-[#180F14] p-5 rounded-xl border border-[#D4AF37]/20 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-sans uppercase tracking-widest text-[#D4AF37]">
+                          <Wine size={14} />
+                          <span>Accord Grand Cru Recommandé</span>
+                        </div>
+                        <h5 className="text-lg font-serif text-[#F3EFE6]">
+                          {dish.sommelierPairing.wine} · {dish.sommelierPairing.vintage}
+                        </h5>
+                        <p className="text-xs font-sans text-[#A89F8E]">
+                          {dish.sommelierPairing.region}
+                        </p>
+                        <p className="text-xs text-[#C8BFAC] font-light italic leading-relaxed pt-1">
+                          « {dish.sommelierPairing.notes} »
+                        </p>
+                      </div>
+
+                      {/* Sensory Profile */}
+                      <div className="bg-[#180F14] p-5 rounded-xl border border-[#D4AF37]/20 space-y-3">
+                        <div className="flex items-center gap-2 text-xs font-sans uppercase tracking-widest text-[#D4AF37]">
+                          <Flame size={14} />
+                          <span>Profil Sensoriel & Température de Service</span>
+                        </div>
+
+                        <div className="space-y-2 font-sans text-xs text-[#C8BFAC]">
+                          <div className="flex justify-between items-center">
+                            <span>Concentration Umami:</span>
+                            <div className="flex gap-1">
+                              {Array.from({ length: 10 }).map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`w-2 h-2 rounded-full ${
+                                    i < dish.flavorProfile.umami ? "bg-[#D4AF37]" : "bg-white/10"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span>Arômes Dominants:</span>
+                            <span className="text-[#F3EFE6] italic font-serif">
+                              {dish.flavorProfile.aroma}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span>Température Idéale au Palais:</span>
+                            <span className="text-[#D4AF37] font-mono">
+                              {dish.flavorProfile.temperature}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Interactive Floorplan Table Selection Section */}
+      <section className="border-t border-b border-[#D4AF37]/20 bg-[#0E080B] py-20 px-4 sm:px-8">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-sans uppercase tracking-[0.3em] text-[#D4AF37]">
+              Architecture des Lieux
+            </span>
+            <h3 className="text-3xl sm:text-4xl font-normal text-[#F3EFE6]">
+              Choisissez Votre Atmosphère
+            </h3>
+            <p className="text-xs font-sans tracking-wider text-[#A89F8E] max-w-lg mx-auto">
+              Trois salons singuliers pour vivre l'expérience gastronomique selon votre sensibilité.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {seatingZones.map((zone) => {
+              const isSelected = selectedSeatingId === zone.id;
+
+              return (
+                <div
+                  key={zone.id}
+                  onClick={() => setSelectedSeatingId(zone.id)}
+                  className={`cursor-pointer rounded-2xl p-6 border transition-all duration-300 flex flex-col justify-between space-y-4 ${
+                    isSelected
+                      ? "border-[#D4AF37] bg-gradient-to-b from-[#1F1218] to-[#140A0F] shadow-2xl shadow-[#D4AF37]/15 scale-[1.02]"
+                      : "border-white/10 bg-[#120A0E] hover:border-[#D4AF37]/40"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-sans uppercase tracking-widest text-[#D4AF37]">
+                        {zone.capacity}
+                      </span>
+                      {isSelected && (
+                        <span className="w-5 h-5 rounded-full bg-[#D4AF37] text-[#0A0708] flex items-center justify-center">
+                          <Check size={12} />
+                        </span>
+                      )}
+                    </div>
+
+                    <h4 className="text-xl font-normal text-[#F3EFE6]">
+                      {zone.name}
+                    </h4>
+                    <p className="text-xs font-sans text-[#D4AF37] italic">
+                      {zone.frenchTitle}
+                    </p>
+                    <p className="text-xs text-[#C8BFAC] font-light leading-relaxed">
+                      {zone.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs font-sans">
+                    <span className="text-[#A89F8E]">Ambiance: {zone.ambiance}</span>
+                    <span className="text-[#D4AF37] font-semibold">
+                      {zone.surchargeEUR === 0 ? "Inclus" : `+€${zone.surchargeEUR}`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-center pt-4">
+            <button
+              onClick={() => setIsReservationOpen(true)}
+              className="px-8 py-3.5 rounded-full bg-[#D4AF37] hover:bg-[#c49f2b] text-[#0A0708] font-sans font-semibold text-xs tracking-widest uppercase transition-transform active:scale-95 shadow-xl shadow-[#D4AF37]/20 inline-flex items-center gap-2"
+            >
+              <span>Réserver Dans Le Salon Sélectionné</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Tasting Menu Reservation Booking Modal */}
+      <AnimatePresence>
+        {isReservationOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !confirmedBooking && setIsReservationOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-2xl bg-[#0F090C] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#D4AF37]/40 z-10 max-h-[92vh] overflow-y-auto text-[#F3EFE6]"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between pb-6 border-b border-[#D4AF37]/20 mb-6">
+                <div>
+                  <h3 className="text-2xl font-normal text-[#F3EFE6]">
+                    Réservation de Table Dégustation
+                  </h3>
+                  <p className="text-xs font-sans text-[#D4AF37] uppercase tracking-wider mt-0.5">
+                    L'Étoile Noire · 18 Place Vendôme, Paris
+                  </p>
+                </div>
+                {!confirmedBooking && (
+                  <button
+                    onClick={() => setIsReservationOpen(false)}
+                    className="p-1.5 rounded-full hover:bg-white/10 text-stone-400 hover:text-white"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+
+              {!confirmedBooking ? (
+                <form onSubmit={handleBookingSubmit} className="space-y-6">
+                  {/* Seating Zone Summary Pill */}
+                  <div className="p-4 rounded-xl bg-[#1A0E14] border border-[#D4AF37]/30 flex items-center justify-between text-xs font-sans">
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
-                        Date
+                      <span className="text-[#D4AF37] uppercase tracking-wider block">
+                        Salon Choisi:
+                      </span>
+                      <strong className="text-sm font-serif text-[#F3EFE6]">
+                        {selectedZone.name} ({selectedZone.frenchTitle})
+                      </strong>
+                    </div>
+                    <span className="text-[#A89F8E]">
+                      {selectedZone.surchargeEUR > 0 ? `+€${selectedZone.surchargeEUR}/couvert` : "Inclus"}
+                    </span>
+                  </div>
+
+                  {/* Guest Count, Date & Time Slots */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-sans uppercase tracking-wider text-[#D4AF37] mb-1">
+                        Nombre de Convives
+                      </label>
+                      <select
+                        value={guestCount}
+                        onChange={(e) => setGuestCount(Number(e.target.value))}
+                        className="w-full bg-[#180E14] border border-[#D4AF37]/30 rounded-lg px-3 py-2 text-xs font-sans text-[#F3EFE6] focus:outline-none focus:border-[#D4AF37]"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 8].map((num) => (
+                          <option key={num} value={num}>
+                            {num} {num === 1 ? "Convive" : "Convives"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-sans uppercase tracking-wider text-[#D4AF37] mb-1">
+                        Date Souhaitée
                       </label>
                       <input
                         type="date"
                         value={reservationDate}
                         onChange={(e) => setReservationDate(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
+                        className="w-full bg-[#180E14] border border-[#D4AF37]/30 rounded-lg px-3 py-2 text-xs font-sans text-[#F3EFE6] focus:outline-none focus:border-[#D4AF37]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
-                        Seating Area
+                      <label className="block text-[11px] font-sans uppercase tracking-wider text-[#D4AF37] mb-1">
+                        Horaire de Service
                       </label>
                       <select
-                        value={seatingArea}
-                        onChange={(e) => setSeatingArea(e.target.value)}
-                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
+                        value={selectedTimeSlot}
+                        onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                        className="w-full bg-[#180E14] border border-[#D4AF37]/30 rounded-lg px-3 py-2 text-xs font-sans text-[#F3EFE6] focus:outline-none focus:border-[#D4AF37]"
                       >
-                        <option value="Chef's Counter">Chef's Counter (Interactive)</option>
-                        <option value="Main Dining Salon">Main Dining Salon</option>
-                        <option value="Wine Vault (Private)">Wine Vault (Private)</option>
-                        <option value="Garden Terrace">Heated Garden Terrace</option>
+                        <option value="19:00">19h00 (Premier Service)</option>
+                        <option value="19:30">19h30</option>
+                        <option value="20:15">20h15 (Grand Service)</option>
+                        <option value="21:00">21h00</option>
                       </select>
                     </div>
                   </div>
 
-                  {/* Time slot pills */}
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
-                      Select Seating Time Slot
-                    </label>
-                    <div className="grid grid-cols-5 gap-2">
-                      {timeSlots.map((slot) => (
-                        <button
-                          key={slot.time}
-                          type="button"
-                          onClick={() => setSelectedTimeSlot(slot.time)}
-                          className={`p-2 rounded-xl text-center border transition-all ${
-                            selectedTimeSlot === slot.time
-                              ? "bg-yellow-500 text-zinc-950 border-yellow-500"
-                              : "bg-white/5 border-white/10 text-zinc-300 hover:text-white"
-                          }`}
-                        >
-                          <div className="text-xs font-bold">{slot.time}</div>
-                          <div className="text-[9px] text-zinc-500 truncate">{slot.available}</div>
-                        </button>
-                      ))}
+                  {/* Sommelier Pairing Addon */}
+                  <div className="p-4 rounded-xl bg-[#1A0E14] border border-[#D4AF37]/30 flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <Wine size={14} className="text-[#D4AF37]" />
+                        <span className="text-sm font-normal text-[#F3EFE6]">
+                          Accord Mets & Vins du Chef Sommelier
+                        </span>
+                      </div>
+                      <p className="text-xs font-sans text-[#A89F8E] font-light">
+                        Sept verres de Grands Crus classés rigoureusement harmonisés (+€185/convive).
+                      </p>
+                    </div>
+
+                    <input
+                      type="checkbox"
+                      checked={sommelierPairingOptIn}
+                      onChange={(e) => setSommelierPairingOptIn(e.target.checked)}
+                      className="w-5 h-5 rounded accent-[#D4AF37] cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Guest Information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-sans uppercase tracking-wider text-[#D4AF37] mb-1">
+                        Nom & Titre de Réservation
+                      </label>
+                      <input
+                        type="text"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        className="w-full bg-[#180E14] border border-[#D4AF37]/30 rounded-lg px-3 py-2 text-xs font-sans text-[#F3EFE6] focus:outline-none focus:border-[#D4AF37]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-sans uppercase tracking-wider text-[#D4AF37] mb-1">
+                        Courriel Pour Confirmation
+                      </label>
+                      <input
+                        type="email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full bg-[#180E14] border border-[#D4AF37]/30 rounded-lg px-3 py-2 text-xs font-sans text-[#F3EFE6] focus:outline-none focus:border-[#D4AF37]"
+                        required
+                      />
                     </div>
                   </div>
 
-                  {/* Contact info */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Lead Guest Full Name"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
-                    />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Email Address for Confirmation"
-                      value={guestEmail}
-                      onChange={(e) => setGuestEmail(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
+                  <div>
+                    <label className="block text-[11px] font-sans uppercase tracking-wider text-[#D4AF37] mb-1">
+                      Notes Diététiques ou Occasion Particulière
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={dietaryNotes}
+                      onChange={(e) => setDietaryNotes(e.target.value)}
+                      placeholder="Allergies, restrictions alimentaires ou célébration..."
+                      className="w-full bg-[#180E14] border border-[#D4AF37]/30 rounded-lg px-3 py-2 text-xs font-sans text-[#F3EFE6] focus:outline-none focus:border-[#D4AF37]"
                     />
                   </div>
 
-                  <input
-                    type="text"
-                    placeholder="Dietary requirements or special requests (allergies, anniversary...)"
-                    value={dietaryNotes}
-                    onChange={(e) => setDietaryNotes(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-yellow-500"
-                  />
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isBooking}
-                      className="w-full py-3.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:opacity-50 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-xl shadow-yellow-500/25 transition-transform active:scale-95"
-                    >
-                      {isBooking ? "Securing Table..." : "Confirm Reservation & Dispatch Voucher →"}
-                    </button>
+                  {/* Total Degustation Estimate */}
+                  <div className="pt-2 border-t border-[#D4AF37]/20 flex items-center justify-between text-xs font-sans">
+                    <span className="text-[#A89F8E]">
+                      Montant Estimé ({guestCount} {guestCount === 1 ? "couvert" : "couverts"} avec menu):
+                    </span>
+                    <span className="text-xl font-serif text-[#D4AF37]">
+                      €{grandTotalEstimateEUR}
+                    </span>
                   </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingBooking}
+                    className="w-full py-4 rounded-full bg-[#D4AF37] hover:bg-[#c49f2b] text-[#0A0708] font-sans font-bold text-xs tracking-widest uppercase transition-all shadow-xl shadow-[#D4AF37]/20 disabled:opacity-50"
+                  >
+                    {isSubmittingBooking ? "Transmission en Cuisine..." : "Confirmer La Réservation Gastronomique"}
+                  </button>
                 </form>
+              ) : (
+                /* Confirmed Booking Voucher */
+                <div className="text-center py-6 space-y-6">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-[#D4AF37]/20 border border-[#D4AF37] text-[#D4AF37] flex items-center justify-center">
+                    <Sparkles size={32} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className="text-2xl font-normal text-[#F3EFE6]">
+                      Votre Table Est Réservée
+                    </h4>
+                    <p className="text-xs font-sans text-[#D4AF37] uppercase tracking-widest">
+                      Référence: {confirmedBooking.ref}
+                    </p>
+                  </div>
+
+                  <p className="text-xs font-light text-[#C8BFAC] max-w-md mx-auto italic">
+                    Nous avons l'honneur de vous accueillir le <strong>{confirmedBooking.date}</strong> à <strong>{confirmedBooking.time}</strong> dans <strong>{confirmedBooking.zone}</strong>. Une lettre officielle a été envoyée à <strong>{confirmedBooking.email}</strong>.
+                  </p>
+
+                  <div className="bg-[#180E14] p-4 rounded-xl text-left text-xs font-sans text-[#C8BFAC] space-y-1.5 border border-[#D4AF37]/30">
+                    <div className="flex justify-between">
+                      <span className="text-[#A89F8E]">Convives:</span>
+                      <strong className="text-[#F3EFE6]">{confirmedBooking.guests} personnes</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#A89F8E]">Accord Mets & Vins:</span>
+                      <strong className="text-[#D4AF37]">
+                        {confirmedBooking.pairing ? "Oui (Grands Crus)" : "Sélection à la carte"}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#A89F8E]">Dress Code:</span>
+                      <strong className="text-[#F3EFE6]">Tenue de Ville Émerveillée</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setConfirmedBooking(null);
+                      setIsReservationOpen(false);
+                    }}
+                    className="px-6 py-3 rounded-full border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A0708] text-xs font-sans tracking-widest uppercase transition-colors"
+                  >
+                    Fermer Le Carnet
+                  </button>
+                </div>
               )}
             </motion.div>
           </div>
@@ -588,5 +918,3 @@ export const RestaurantDemo: React.FC = () => {
     </div>
   );
 };
-
-export default RestaurantDemo;

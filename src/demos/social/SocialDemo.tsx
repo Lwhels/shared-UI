@@ -1,14 +1,6 @@
 import React, { useState } from "react";
 import confetti from "canvas-confetti";
 import {
-  Spotlight,
-  GlassCard,
-  Magnetic,
-  GlowingBadge,
-  StatusDot,
-  TextReveal,
-} from "../../components";
-import {
   Heart,
   MessageCircle,
   Repeat,
@@ -24,14 +16,30 @@ import {
   X,
   Bookmark,
   ExternalLink,
+  Radio,
+  Search,
+  Hash,
+  Compass,
+  CheckCircle2,
+  MoreHorizontal,
+  BarChart2,
+  AtSign,
+  Layers,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface Comment {
+interface Reply {
   id: string;
   author: string;
+  handle: string;
+  avatar: string;
   text: string;
   timestamp: string;
+}
+
+interface PollOption {
+  text: string;
+  votes: number;
 }
 
 interface Post {
@@ -41,26 +49,54 @@ interface Post {
     handle: string;
     avatar: string;
     badge: string;
-    bio?: string;
+    verified: boolean;
   };
   timestamp: string;
   content: string;
   tags: string[];
   likes: number;
-  comments: Comment[];
   reposts: number;
+  replies: Reply[];
   hasLiked?: boolean;
+  hasReposted?: boolean;
+  hasBookmarked?: boolean;
+  poll?: {
+    question: string;
+    options: PollOption[];
+    userVotedIndex?: number;
+  };
 }
 
 export const SocialDemo: React.FC = () => {
-  const [newPostText, setNewPostText] = useState("");
-  const [activeTag, setActiveTag] = useState("#motionUI");
-  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set(["@ariathorne"]));
-  const [selectedPostForComments, setSelectedPostForComments] = useState<Post | null>(null);
-  const [newCommentInput, setNewCommentInput] = useState("");
-  const [selectedUserProfile, setSelectedUserProfile] = useState<any | null>(null);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [shareToast, setShareToast] = useState(false);
+  const [activeTab, setActiveTab] = useState<"for-you" | "following" | "design-tech">("for-you");
+  const [composerText, setComposerText] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [activeThreadPost, setActiveThreadPost] = useState<Post | null>(null);
+  const [newReplyText, setNewReplyText] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [followedUsers, setFollowedUsers] = useState<Set<string>>(
+    new Set(["@ariathorne", "@kaelenvoss"])
+  );
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const toggleFollow = (handle: string) => {
+    setFollowedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(handle)) {
+        next.delete(handle);
+        showToast(`Unfollowed ${handle}`);
+      } else {
+        next.add(handle);
+        showToast(`Now following ${handle}`);
+      }
+      return next;
+    });
+  };
 
   const [posts, setPosts] = useState<Post[]>([
     {
@@ -70,19 +106,41 @@ export const SocialDemo: React.FC = () => {
         handle: "@ariathorne",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
         badge: "Design Director",
-        bio: "Directing interaction physics and spatial design tokens at Horizon Labs. Obsessed with 120fps fluid mechanics.",
+        verified: true,
       },
-      timestamp: "12m ago",
+      timestamp: "8m ago",
       content:
         "Just open-sourced our entire interactive 3D perspective component collection. Hover physics feel like actual tactile hardware under your glass trackpad. Check the shared-UI repository!",
-      tags: ["#designSystems", "#motionUI", "#react"],
-      likes: 124,
-      comments: [
-        { id: "cm-1", author: "Kaelen Voss", text: "The sub-pixel damping curves are buttery smooth on Safari!", timestamp: "5m ago" },
-        { id: "cm-2", author: "Devon Cross", text: "Already using the Spotlight component on our landing page.", timestamp: "2m ago" },
-      ],
-      reposts: 32,
+      tags: ["#DesignSystems", "#MotionUI", "#React18"],
+      likes: 184,
+      reposts: 42,
       hasLiked: false,
+      replies: [
+        {
+          id: "r1",
+          author: "Kaelen Voss",
+          handle: "@kaelenvoss",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+          text: "The sub-pixel damping curves are buttery smooth on 120Hz ProMotion displays!",
+          timestamp: "5m ago",
+        },
+        {
+          id: "r2",
+          author: "Devon Cross",
+          handle: "@devoncross",
+          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
+          text: "Already using the Spotlight component on our landing page. Absolute game changer.",
+          timestamp: "2m ago",
+        },
+      ],
+      poll: {
+        question: "Which motion paradigm feels best for high-frequency trading dashboards?",
+        options: [
+          { text: "Damped Spring Oscillators", votes: 142 },
+          { text: "Linear Hardware Transforms", votes: 38 },
+          { text: "Zero Animation (Instant Cut)", votes: 61 },
+        ],
+      },
     },
     {
       id: "post-2",
@@ -90,49 +148,107 @@ export const SocialDemo: React.FC = () => {
         name: "Kaelen Voss",
         handle: "@kaelenvoss",
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-        badge: "WebGL Engineer",
-        bio: "Compiling fragment shaders and high-speed motion loops. Ex-Automotive UI lead.",
+        badge: "WebGL Architect",
+        verified: true,
       },
-      timestamp: "1h ago",
+      timestamp: "45m ago",
       content:
-        "Sub-pixel spring damping in Framer Motion is unbeatable when combined with radial spotlight CSS variables. No lag, no re-render jank on 120Hz ProMotion screens.",
-      tags: ["#webperf", "#framerMotion", "#frontend"],
-      likes: 89,
-      comments: [],
-      reposts: 14,
-      hasLiked: true,
+        "PSA: If your CSS radial gradient spotlight is causing layout reflows, move mouse coordinates into raw CSS variables instead of React state. Drops CPU usage from 34% to 2% flat.",
+      tags: ["#WebPerf", "#CSS", "#Frontend"],
+      likes: 295,
+      reposts: 88,
+      hasLiked: false,
+      replies: [
+        {
+          id: "r3",
+          author: "Aria Thorne",
+          handle: "@ariathorne",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+          text: "100%. Keeping transform computations out of the React render loop is law.",
+          timestamp: "20m ago",
+        },
+      ],
     },
     {
       id: "post-3",
       author: {
-        name: "Sloane Lin",
-        handle: "@sloanelin",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
-        badge: "Founding Designer",
-        bio: "Building next-generation design systems with multi-theme architecture.",
+        name: "Devon Cross",
+        handle: "@devoncross",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
+        badge: "Systems Lead",
+        verified: false,
       },
-      timestamp: "3h ago",
+      timestamp: "2h ago",
       content:
-        "The best design systems aren't dogmatic. They give you the physics, the spotlights, and the typography tokens, then let you craft restaurants, SaaS, or portfolios without looking identical.",
-      tags: ["#designPhilosophy", "#uiUx"],
-      likes: 245,
-      comments: [
-        { id: "cm-3", author: "Maya Sterling", text: "Spot on! The 5-theme switcher proves this exact thesis.", timestamp: "1h ago" },
-      ],
-      reposts: 58,
+        "Shipped our turnkey Stripe payment integration with instant email receipts today. Zero superfluous SaaS dependencies, just clean TypeScript abstractions.",
+      tags: ["#TypeScript", "#Stripe", "#IndieHacker"],
+      likes: 92,
+      reposts: 15,
       hasLiked: false,
+      replies: [],
     },
   ]);
 
-  const toggleLike = (id: string) => {
+  const handleLike = (id: string) => {
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === id) {
-          const liked = !p.hasLiked;
+          const nextLiked = !p.hasLiked;
           return {
             ...p,
-            hasLiked: liked,
-            likes: liked ? p.likes + 1 : p.likes - 1,
+            hasLiked: nextLiked,
+            likes: nextLiked ? p.likes + 1 : p.likes - 1,
+          };
+        }
+        return p;
+      })
+    );
+  };
+
+  const handleRepost = (id: string) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          const nextRepost = !p.hasReposted;
+          return {
+            ...p,
+            hasReposted: nextRepost,
+            reposts: nextRepost ? p.reposts + 1 : p.reposts - 1,
+          };
+        }
+        return p;
+      })
+    );
+    showToast("Reposted to your follower network.");
+  };
+
+  const handleBookmark = (id: string) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          const nextBookmark = !p.hasBookmarked;
+          return { ...p, hasBookmarked: nextBookmark };
+        }
+        return p;
+      })
+    );
+    showToast("Post saved to bookmarks.");
+  };
+
+  const handleVotePoll = (postId: string, optionIdx: number) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId && p.poll && p.poll.userVotedIndex === undefined) {
+          const updatedOptions = p.poll.options.map((opt, i) =>
+            i === optionIdx ? { ...opt, votes: opt.votes + 1 } : opt
+          );
+          return {
+            ...p,
+            poll: {
+              ...p.poll,
+              options: updatedOptions,
+              userVotedIndex: optionIdx,
+            },
           };
         }
         return p;
@@ -142,518 +258,630 @@ export const SocialDemo: React.FC = () => {
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPostText.trim()) return;
+    if (!composerText.trim()) return;
 
     const newPost: Post = {
-      id: `post-${Date.now()}`,
+      id: `post_${Date.now()}`,
       author: {
-        name: "You (Creative Lead)",
-        handle: "@creator",
+        name: "You (Active Creator)",
+        handle: "@you",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
         badge: "Pro Member",
-        bio: "Founding architect experimenting with shared-UI client libraries.",
+        verified: true,
       },
       timestamp: "Just now",
-      content: newPostText,
-      tags: [activeTag],
+      content: composerText.trim(),
+      tags: ["#Community", "#SharedUI"],
       likes: 1,
-      comments: [],
       reposts: 0,
       hasLiked: true,
+      replies: [],
     };
 
     setPosts([newPost, ...posts]);
-    setNewPostText("");
+    setComposerText("");
+    showToast("Dispatch published live to network!");
 
     confetti({
       particleCount: 50,
-      spread: 45,
-      origin: { y: 0.6 },
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ["#1D9BF0", "#8B5CF6", "#10B981"],
     });
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddReply = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommentInput.trim() || !selectedPostForComments) return;
+    if (!activeThreadPost || !newReplyText.trim()) return;
 
-    const commentItem: Comment = {
-      id: `cm-${Date.now()}`,
-      author: "You (@creator)",
-      text: newCommentInput,
+    const replyObj: Reply = {
+      id: `rep_${Date.now()}`,
+      author: "You",
+      handle: "@you",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+      text: newReplyText.trim(),
       timestamp: "Just now",
     };
 
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === selectedPostForComments.id
-          ? { ...p, comments: [...p.comments, commentItem] }
-          : p
+        p.id === activeThreadPost.id ? { ...p, replies: [...p.replies, replyObj] } : p
       )
     );
 
-    setSelectedPostForComments((prev) =>
-      prev ? { ...prev, comments: [...prev.comments, commentItem] } : null
+    setActiveThreadPost((prev) =>
+      prev ? { ...prev, replies: [...prev.replies, replyObj] } : null
     );
 
-    setNewCommentInput("");
+    setNewReplyText("");
+    showToast("Reply published to thread.");
   };
 
-  const toggleFollow = (handle: string) => {
-    setFollowedUsers((prev) => {
-      const next = new Set(prev);
-      if (next.has(handle)) next.delete(handle);
-      else next.add(handle);
-      return next;
-    });
-  };
+  const filteredPosts = posts.filter((p) => {
+    if (selectedTag && !p.tags.includes(selectedTag)) return false;
+    if (activeTab === "following") return followedUsers.has(p.author.handle);
+    if (activeTab === "design-tech") return p.tags.some((t) => t.toLowerCase().includes("design") || t.toLowerCase().includes("motion"));
+    return true;
+  });
+
+  const maxChars = 280;
+  const charsLeft = maxChars - composerText.length;
+  const progressRatio = Math.min(1, composerText.length / maxChars);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* Header Banner with Notifications Trigger */}
-      <section className="relative py-16 px-6 text-center border-b border-white/10 bg-gradient-to-b from-purple-950/20 to-zinc-950/60">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <GlowingBadge variant="rose">SPHERE CREATOR NETWORK</GlowingBadge>
+    <div className="min-h-screen bg-[#0C1017] text-slate-100 font-sans selection:bg-[#1D9BF0]/30 selection:text-white">
+      {/* Toast Alert */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 15 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-[#1D9BF0] text-white text-xs font-semibold shadow-2xl flex items-center gap-2"
+          >
+            <Sparkles size={14} />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Notification Bell Pill */}
-            <div className="relative">
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white relative transition-transform active:scale-95"
-                title="Notifications"
-              >
-                <Bell size={14} />
-                <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1 right-1" />
-              </button>
-
-              <AnimatePresence>
-                {notificationsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-72 bg-zinc-950 border border-white/15 rounded-2xl p-3 shadow-2xl text-left z-50 space-y-2"
-                  >
-                    <div className="text-xs font-bold text-white px-2 py-1 border-b border-white/10">
-                      Notifications (3)
-                    </div>
-                    {[
-                      { text: "Elena Rostova liked your post on #motionUI", time: "5m ago" },
-                      { text: "Marcus Vance mentioned you in #designSystems", time: "22m ago" },
-                      { text: "Aria Thorne started following your updates", time: "1h ago" },
-                    ].map((n, i) => (
-                      <div key={i} className="p-2 rounded-xl bg-white/[0.02] text-xs text-zinc-300">
-                        <div>{n.text}</div>
-                        <div className="text-[10px] text-zinc-500 font-mono mt-0.5">{n.time}</div>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-screen">
+        {/* Left Column: Navigation Rail */}
+        <aside className="hidden lg:block lg:col-span-3 border-r border-slate-800/80 p-6 sticky top-0 h-screen flex flex-col justify-between">
+          <div className="space-y-6">
+            {/* Brand Logo */}
+            <div className="flex items-center gap-2.5 px-2">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#1D9BF0] to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-sky-500/20">
+                P
+              </div>
+              <div>
+                <span className="font-bold tracking-tight text-white text-base">Pulse Network</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>LIVE GLOBAL MESH</span>
+                </div>
+              </div>
             </div>
+
+            {/* Nav Links */}
+            <nav className="space-y-1.5 text-sm font-medium">
+              {[
+                { label: "Home Feed", icon: Hash, active: true },
+                { label: "Trending Topics", icon: TrendingUp },
+                { label: "Notifications", icon: Bell, badge: "3" },
+                { label: "Bookmarks", icon: Bookmark },
+                { label: "Live Spaces", icon: Radio, live: true },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors ${
+                    item.active
+                      ? "bg-slate-800/90 text-white font-bold"
+                      : "text-slate-400 hover:text-white hover:bg-slate-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon size={18} className={item.active ? "text-[#1D9BF0]" : ""} />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="px-2 py-0.5 rounded-full bg-[#1D9BF0] text-white text-[10px] font-bold">
+                      {item.badge}
+                    </span>
+                  )}
+                  {item.live && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  )}
+                </button>
+              ))}
+            </nav>
+
+            {/* Quick Primary Button */}
+            <button
+              onClick={() => {
+                const el = document.getElementById("main-composer");
+                el?.focus();
+              }}
+              className="w-full py-3 rounded-full bg-[#1D9BF0] hover:bg-sky-400 text-white font-bold text-xs tracking-wider uppercase transition-all shadow-lg shadow-sky-500/20 active:scale-95"
+            >
+              Post Dispatch
+            </button>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight">
-            Connect with the{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-purple-300 to-indigo-400">
-              <TextReveal text="Vanguard of Digital Design." />
-            </span>
-          </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto">
-            A collaborative stream where designers, creative coders, and founders exchange production components and experiments.
-          </p>
-        </div>
-      </section>
-
-      {/* Main 3-Column Community Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left Sidebar: Profile & Navigation */}
-        <div className="space-y-6">
-          <GlassCard className="p-6 text-center space-y-4">
-            <div
-              className="relative inline-block mx-auto cursor-pointer"
-              onClick={() =>
-                setSelectedUserProfile({
-                  name: "Alex Rivera",
-                  handle: "@alexdesign",
-                  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
-                  badge: "Pro Architect",
-                  bio: "Lead Interface Technologist at Shared-UI. Focusing on 120fps motion design tokens.",
-                  stats: { followers: "8.9k", following: "1.4k", components: 42 },
-                })
-              }
-            >
+          {/* User mini bar */}
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
               <img
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"
-                alt="Your Avatar"
-                className="w-16 h-16 rounded-full object-cover border-2 border-rose-500/50 mx-auto"
+                alt="Avatar"
+                className="w-9 h-9 rounded-full object-cover"
               />
-              <div className="absolute bottom-0 right-0">
-                <StatusDot status="online" size="md" />
+              <div className="text-xs">
+                <strong className="block text-white leading-tight">Alex Vance</strong>
+                <span className="text-slate-400 text-[11px]">@alexvance</span>
               </div>
             </div>
+            <MoreHorizontal size={16} className="text-slate-500" />
+          </div>
+        </aside>
 
-            <div>
-              <h3 className="font-bold text-base text-white">Alex Rivera</h3>
-              <p className="text-xs text-zinc-400 font-mono">@alexdesign · Pro</p>
-            </div>
-
-            <div className="pt-3 border-t border-white/10 grid grid-cols-3 gap-2 text-center text-xs">
-              <div>
-                <span className="font-bold text-white block">1.4k</span>
-                <span className="text-[10px] text-zinc-500">Following</span>
-              </div>
-              <div>
-                <span className="font-bold text-white block">8.9k</span>
-                <span className="text-[10px] text-zinc-500">Followers</span>
-              </div>
-              <div>
-                <span className="font-bold text-rose-400 block">42</span>
-                <span className="text-[10px] text-zinc-500">Components</span>
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* Trending Topics */}
-          <Spotlight className="p-5 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-rose-400 font-mono uppercase">
-              <TrendingUp size={14} />
-              <span>Trending Tags</span>
-            </div>
-            <div className="space-y-2 text-xs">
+        {/* Center Column: Feed Stream */}
+        <main className="col-span-1 lg:col-span-6 border-r border-slate-800/80 min-h-screen">
+          {/* Feed Header Tabs */}
+          <div className="sticky top-0 z-30 bg-[#0C1017]/95 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 sm:px-6">
+            <div className="flex gap-2">
               {[
-                { tag: "#motionUI", posts: "2.4k posts" },
-                { tag: "#designSystems", posts: "1.8k posts" },
-                { tag: "#reactSpring", posts: "940 posts" },
-                { tag: "#threeDCard", posts: "620 posts" },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  onClick={() => setActiveTag(item.tag)}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer text-zinc-300 hover:text-white"
+                { id: "for-you", label: "For You" },
+                { id: "following", label: "Following" },
+                { id: "design-tech", label: "Design Tech" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id as any);
+                    setSelectedTag(null);
+                  }}
+                  className={`py-3.5 px-3 text-xs font-semibold transition-all relative ${
+                    activeTab === tab.id ? "text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
                 >
-                  <span className="font-mono text-amber-400">{item.tag}</span>
-                  <span className="text-[10px] text-zinc-500">{item.posts}</span>
-                </div>
+                  <span>{tab.label}</span>
+                  {activeTab === tab.id && (
+                    <motion.div
+                      layoutId="activeFeedTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1D9BF0] rounded-full"
+                    />
+                  )}
+                </button>
               ))}
             </div>
-          </Spotlight>
-        </div>
 
-        {/* Center: Post Feed & Composer */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Post Composer */}
-          <GlassCard className="p-5">
-            <form onSubmit={handleCreatePost} className="space-y-3">
-              <textarea
-                value={newPostText}
-                onChange={(e) => setNewPostText(e.target.value)}
-                placeholder="Share a component pattern, animation trick, or code snippet..."
-                rows={3}
-                className="w-full bg-transparent text-xs text-white placeholder-zinc-500 focus:outline-none resize-none leading-relaxed"
-              />
-
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/5 text-amber-400">
-                    {activeTag}
-                  </span>
-                </div>
-
-                <Magnetic strength={0.2}>
-                  <button
-                    type="submit"
-                    disabled={!newPostText.trim()}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-500 hover:bg-rose-400 disabled:opacity-40 text-white font-bold text-xs transition-colors"
-                  >
-                    <Send size={12} />
-                    <span>Publish Post</span>
-                  </button>
-                </Magnetic>
+            {selectedTag && (
+              <div className="flex items-center gap-1.5 text-xs text-[#1D9BF0] bg-sky-500/10 px-2.5 py-1 rounded-full">
+                <span>{selectedTag}</span>
+                <button onClick={() => setSelectedTag(null)} className="hover:text-white">
+                  <X size={12} />
+                </button>
               </div>
-            </form>
-          </GlassCard>
+            )}
+          </div>
 
-          {/* Post Stream */}
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <Spotlight key={post.id} className="p-6 space-y-4 group">
-                <div className="flex items-center justify-between">
-                  <div
-                    className="flex items-center gap-3 cursor-pointer"
-                    onClick={() => setSelectedUserProfile(post.author)}
-                  >
+          {/* Post Composer Box */}
+          <form
+            onSubmit={handleCreatePost}
+            className="p-4 sm:p-6 border-b border-slate-800 space-y-3 bg-[#10141D]"
+          >
+            <div className="flex gap-3">
+              <img
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"
+                alt="Avatar"
+                className="w-10 h-10 rounded-full object-cover shrink-0"
+              />
+              <div className="flex-1">
+                <textarea
+                  id="main-composer"
+                  rows={3}
+                  value={composerText}
+                  onChange={(e) => setComposerText(e.target.value.slice(0, maxChars))}
+                  placeholder="What are you building today? Share a technical insight..."
+                  className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none resize-none"
+                />
+
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                  {/* Action Icons */}
+                  <div className="flex items-center gap-1 text-[#1D9BF0]">
+                    <button type="button" className="p-1.5 rounded-full hover:bg-sky-500/10 transition-colors">
+                      <Image size={16} />
+                    </button>
+                    <button type="button" className="p-1.5 rounded-full hover:bg-sky-500/10 transition-colors">
+                      <BarChart2 size={16} />
+                    </button>
+                    <button type="button" className="p-1.5 rounded-full hover:bg-sky-500/10 transition-colors">
+                      <Smile size={16} />
+                    </button>
+                  </div>
+
+                  {/* Character Counter & Submit */}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`text-xs font-mono ${
+                        charsLeft < 20 ? "text-red-400 font-bold" : "text-slate-500"
+                      }`}
+                    >
+                      {charsLeft}
+                    </span>
+
+                    <button
+                      type="submit"
+                      disabled={!composerText.trim()}
+                      className="px-5 py-2 rounded-full bg-[#1D9BF0] hover:bg-sky-400 text-white font-bold text-xs transition-transform active:scale-95 disabled:opacity-40"
+                    >
+                      Dispatch
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          {/* Posts Feed Stream */}
+          <div className="divide-y divide-slate-800/80">
+            {filteredPosts.map((post) => (
+              <article
+                key={post.id}
+                className="p-4 sm:p-6 hover:bg-slate-900/40 transition-colors space-y-3"
+              >
+                {/* Author Info */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
                     <img
                       src={post.author.avatar}
                       alt={post.author.name}
-                      className="w-10 h-10 rounded-full object-cover border border-white/20"
+                      className="w-10 h-10 rounded-full object-cover"
                     />
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white hover:underline">
+                      <div className="flex items-center gap-1.5">
+                        <strong className="text-sm text-white font-semibold">
                           {post.author.name}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 font-mono">
-                          {post.author.badge}
-                        </span>
+                        </strong>
+                        {post.author.verified && (
+                          <CheckCircle2 size={13} className="text-[#1D9BF0]" />
+                        )}
+                        <span className="text-xs text-slate-400">{post.author.handle}</span>
+                        <span className="text-xs text-slate-500">· {post.timestamp}</span>
                       </div>
-                      <span className="text-xs text-zinc-500 font-mono">
-                        {post.author.handle} · {post.timestamp}
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
+                        {post.author.badge}
                       </span>
                     </div>
                   </div>
+
+                  <button className="text-slate-500 hover:text-slate-300">
+                    <MoreHorizontal size={16} />
+                  </button>
                 </div>
 
-                <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed">
+                {/* Content */}
+                <p className="text-sm text-slate-200 leading-relaxed font-normal">
                   {post.content}
                 </p>
 
+                {/* Tags */}
                 <div className="flex flex-wrap gap-1.5">
-                  {post.tags.map((t, i) => (
-                    <span
-                      key={i}
-                      className="text-[11px] font-mono text-amber-400 hover:underline cursor-pointer"
+                  {post.tags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSelectedTag(tag)}
+                      className="text-xs text-[#1D9BF0] hover:underline"
                     >
-                      {t}
-                    </span>
+                      {tag}
+                    </button>
                   ))}
                 </div>
 
-                <div className="pt-3 border-t border-white/5 flex items-center justify-between text-zinc-400 text-xs">
-                  <button
-                    onClick={() => toggleLike(post.id)}
-                    className={`flex items-center gap-1.5 transition-colors ${
-                      post.hasLiked ? "text-rose-400 font-semibold" : "hover:text-rose-400"
-                    }`}
-                  >
-                    <Heart size={15} fill={post.hasLiked ? "currentColor" : "none"} />
-                    <span>{post.likes}</span>
-                  </button>
+                {/* Interactive Poll Box (if present) */}
+                {post.poll && (
+                  <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
+                    <span className="text-xs font-semibold text-slate-300 block">
+                      {post.poll.question}
+                    </span>
+                    <div className="space-y-2">
+                      {post.poll.options.map((opt, i) => {
+                        const totalVotes = post.poll!.options.reduce((s, o) => s + o.votes, 0);
+                        const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
+                        const hasVoted = post.poll!.userVotedIndex !== undefined;
 
+                        return (
+                          <div
+                            key={opt.text}
+                            onClick={() => !hasVoted && handleVotePoll(post.id, i)}
+                            className={`p-2.5 rounded-lg border text-xs font-mono relative overflow-hidden transition-all ${
+                              hasVoted
+                                ? "border-slate-700 bg-slate-800/80 cursor-default"
+                                : "border-slate-700 hover:border-[#1D9BF0] bg-slate-800/40 cursor-pointer"
+                            }`}
+                          >
+                            {hasVoted && (
+                              <div
+                                className="absolute left-0 top-0 bottom-0 bg-[#1D9BF0]/20 transition-all duration-500"
+                                style={{ width: `${pct}%` }}
+                              />
+                            )}
+                            <div className="relative flex justify-between items-center">
+                              <span className="text-slate-200 font-medium">{opt.text}</span>
+                              {hasVoted && <strong className="text-slate-400">{pct}%</strong>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Post Action Bar */}
+                <div className="pt-2 flex items-center justify-between text-xs text-slate-400 max-w-md">
+                  {/* Reply Button */}
                   <button
-                    onClick={() => setSelectedPostForComments(post)}
-                    className="flex items-center gap-1.5 hover:text-white transition-colors"
+                    onClick={() => setActiveThreadPost(post)}
+                    className="flex items-center gap-1.5 hover:text-[#1D9BF0] transition-colors"
                   >
                     <MessageCircle size={15} />
-                    <span>{post.comments.length}</span>
+                    <span>{post.replies.length}</span>
                   </button>
 
+                  {/* Repost Button */}
                   <button
-                    onClick={() => {
-                      setPosts((prev) =>
-                        prev.map((p) => (p.id === post.id ? { ...p, reposts: p.reposts + 1 } : p))
-                      );
-                    }}
-                    className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
+                    onClick={() => handleRepost(post.id)}
+                    className={`flex items-center gap-1.5 transition-colors ${
+                      post.hasReposted ? "text-emerald-400" : "hover:text-emerald-400"
+                    }`}
                   >
                     <Repeat size={15} />
                     <span>{post.reposts}</span>
                   </button>
 
+                  {/* Like Button */}
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center gap-1.5 transition-colors ${
+                      post.hasLiked ? "text-red-500" : "hover:text-red-500"
+                    }`}
+                  >
+                    <Heart size={15} className={post.hasLiked ? "fill-red-500" : ""} />
+                    <span>{post.likes}</span>
+                  </button>
+
+                  {/* Bookmark Button */}
+                  <button
+                    onClick={() => handleBookmark(post.id)}
+                    className={`hover:text-[#1D9BF0] transition-colors ${
+                      post.hasBookmarked ? "text-[#1D9BF0]" : ""
+                    }`}
+                  >
+                    <Bookmark size={15} className={post.hasBookmarked ? "fill-[#1D9BF0]" : ""} />
+                  </button>
+
+                  {/* Share Link */}
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(`https://sphere.shared-ui.dev/p/${post.id}`);
-                      setShareToast(true);
-                      setTimeout(() => setShareToast(false), 2000);
+                      navigator.clipboard.writeText(`https://pulse.network/posts/${post.id}`);
+                      showToast("Post link copied to clipboard!");
                     }}
-                    className="hover:text-white transition-colors"
-                    title="Share permalink"
+                    className="hover:text-[#1D9BF0] transition-colors"
                   >
                     <Share2 size={15} />
                   </button>
                 </div>
-              </Spotlight>
+              </article>
             ))}
           </div>
-        </div>
+        </main>
 
-        {/* Right Column: Suggested Creators */}
-        <div className="space-y-6">
-          <Spotlight className="p-5 space-y-4">
-            <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
-              Suggested Creators
+        {/* Right Column: Trending & Discovery */}
+        <aside className="hidden lg:block lg:col-span-3 p-6 space-y-6 sticky top-0 h-screen overflow-y-auto">
+          {/* Search Box */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search Pulse dispatches..."
+              className="w-full bg-slate-900 text-xs text-white pl-9 pr-4 py-2.5 rounded-full border border-slate-800 focus:outline-none focus:border-[#1D9BF0]"
+            />
+          </div>
+
+          {/* Live Spaces Audio Room */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/80 to-slate-900 border border-indigo-500/30 space-y-3 shadow-lg">
+            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>LIVE AUDIO SPACE</span>
+            </div>
+            <h4 className="text-sm font-bold text-white">
+              Designing at 120fps: Physics, Springs & Shaders
             </h4>
+            <p className="text-xs text-slate-400">Hosted by Aria Thorne · 142 tuning in</p>
+            <button
+              onClick={() => showToast("Connected to live audio telemetry room.")}
+              className="w-full py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors"
+            >
+              Tune In to Stage
+            </button>
+          </div>
 
-            <div className="space-y-3">
+          {/* Trending Topics Box */}
+          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <span className="text-xs font-bold text-white uppercase tracking-wider block">
+              Trending in Tech
+            </span>
+            <div className="space-y-2.5 text-xs">
               {[
-                { name: "Devon Cross", handle: "@devoncross", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80", role: "Design Systems", badge: "Core Contributor", bio: "Architecting design systems for Fortune 500 engineering teams." },
-                { name: "Maya Sterling", handle: "@mayasterling", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80", role: "Creative Tech", badge: "WebGL Fellow", bio: "Procedural shaders, audio-reactive canvases, and three.js." },
-                { name: "Julian Thorne", handle: "@julianthorne", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80", role: "Motion Architect", badge: "Framer Lead", bio: "Crafting micro-interactions and tactile friction physics." },
-              ].map((creator, i) => {
-                const isFollowed = followedUsers.has(creator.handle);
+                { tag: "#MotionUI", count: "14.2k dispatches" },
+                { tag: "#Vite6", count: "9.8k dispatches" },
+                { tag: "#SubPixelPhysics", count: "6.1k dispatches" },
+                { tag: "#DesignEngineers", count: "4.5k dispatches" },
+              ].map((t) => (
+                <div
+                  key={t.tag}
+                  onClick={() => setSelectedTag(t.tag)}
+                  className="cursor-pointer hover:bg-slate-800/60 p-2 rounded-lg transition-colors"
+                >
+                  <strong className="text-slate-200 block">{t.tag}</strong>
+                  <span className="text-[11px] text-slate-500">{t.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Who to Follow Box */}
+          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <span className="text-xs font-bold text-white uppercase tracking-wider block">
+              Who to Follow
+            </span>
+            <div className="space-y-3 text-xs">
+              {[
+                {
+                  name: "Aria Thorne",
+                  handle: "@ariathorne",
+                  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+                },
+                {
+                  name: "Kaelen Voss",
+                  handle: "@kaelenvoss",
+                  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+                },
+              ].map((user) => {
+                const isFollowing = followedUsers.has(user.handle);
                 return (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div
-                      className="flex items-center gap-2.5 cursor-pointer"
-                      onClick={() => setSelectedUserProfile(creator)}
-                    >
+                  <div key={user.handle} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       <img
-                        src={creator.avatar}
-                        alt={creator.name}
-                        className="w-8 h-8 rounded-full object-cover border border-white/10"
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full object-cover"
                       />
                       <div>
-                        <div className="font-semibold text-white truncate max-w-[100px] hover:underline">
-                          {creator.name}
-                        </div>
-                        <div className="text-[10px] text-zinc-500 font-mono">
-                          {creator.role}
-                        </div>
+                        <strong className="text-white block">{user.name}</strong>
+                        <span className="text-slate-500 text-[11px]">{user.handle}</span>
                       </div>
                     </div>
 
-                    <Magnetic strength={0.2}>
-                      <button
-                        onClick={() => toggleFollow(creator.handle)}
-                        className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
-                          isFollowed
-                            ? "bg-white/10 text-zinc-300 hover:bg-rose-500/20 hover:text-rose-300"
-                            : "bg-white text-zinc-950 hover:bg-amber-400"
-                        }`}
-                      >
-                        {isFollowed ? "Following" : "Follow"}
-                      </button>
-                    </Magnetic>
+                    <button
+                      onClick={() => toggleFollow(user.handle)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                        isFollowing
+                          ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                          : "bg-white text-slate-950 hover:bg-slate-200"
+                      }`}
+                    >
+                      {isFollowing ? "Following" : "Follow"}
+                    </button>
                   </div>
                 );
               })}
             </div>
-          </Spotlight>
-        </div>
+          </div>
+        </aside>
       </div>
 
-      {/* Comment Drawer Modal */}
+      {/* Slide-over Nested Thread Drawer */}
       <AnimatePresence>
-        {selectedPostForComments && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+        {activeThreadPost && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveThreadPost(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#0C1017] border-l border-slate-800 shadow-2xl flex flex-col justify-between"
             >
-              <div className="flex justify-between items-center pb-3 border-b border-white/10 shrink-0">
-                <h3 className="font-bold text-sm text-white">
-                  Comments on {selectedPostForComments.author.name}'s Post
-                </h3>
+              {/* Drawer Top */}
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-[#10141D]">
+                <div className="flex items-center gap-2">
+                  <MessageCircle size={18} className="text-[#1D9BF0]" />
+                  <h3 className="font-bold text-white text-sm">Thread Conversation</h3>
+                </div>
                 <button
-                  onClick={() => setSelectedPostForComments(null)}
-                  className="p-1 rounded-full text-zinc-400 hover:text-white"
+                  onClick={() => setActiveThreadPost(null)}
+                  className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              {/* Original post snippet */}
-              <div className="p-3 rounded-xl bg-white/5 text-xs text-zinc-300 shrink-0">
-                "{selectedPostForComments.content}"
-              </div>
-
-              {/* Comments list */}
-              <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                {selectedPostForComments.comments.length === 0 ? (
-                  <p className="text-xs text-zinc-500 text-center py-8">
-                    No comments yet. Start the conversation!
-                  </p>
-                ) : (
-                  selectedPostForComments.comments.map((c) => (
-                    <div key={c.id} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="font-semibold text-white">{c.author}</span>
-                        <span className="text-zinc-500 font-mono">{c.timestamp}</span>
-                      </div>
-                      <p className="text-xs text-zinc-300">{c.text}</p>
+              {/* Main Post Context in Drawer */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={activeThreadPost.author.avatar}
+                      alt={activeThreadPost.author.name}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <div className="text-xs">
+                      <strong className="text-white block">{activeThreadPost.author.name}</strong>
+                      <span className="text-slate-400">{activeThreadPost.author.handle}</span>
                     </div>
-                  ))
-                )}
+                  </div>
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    {activeThreadPost.content}
+                  </p>
+                </div>
+
+                {/* Replies list */}
+                <div className="space-y-3 pt-2">
+                  <span className="text-[11px] font-mono uppercase text-slate-500 block">
+                    Replies ({activeThreadPost.replies.length})
+                  </span>
+
+                  {activeThreadPost.replies.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic py-6 text-center">
+                      No replies yet. Be the first to start the discussion!
+                    </p>
+                  ) : (
+                    activeThreadPost.replies.map((rep) => (
+                      <div
+                        key={rep.id}
+                        className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/80 space-y-1.5 text-xs"
+                      >
+                        <div className="flex justify-between items-baseline">
+                          <strong className="text-slate-200">{rep.author}</strong>
+                          <span className="text-[10px] text-slate-500">{rep.timestamp}</span>
+                        </div>
+                        <p className="text-slate-300 font-normal">{rep.text}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
-              {/* Add comment */}
-              <form onSubmit={handleAddComment} className="pt-3 border-t border-white/10 flex gap-2 shrink-0">
+              {/* Reply Composer Bottom */}
+              <form onSubmit={handleAddReply} className="p-4 border-t border-slate-800 bg-[#10141D] flex gap-2">
                 <input
                   type="text"
-                  placeholder="Write a reply..."
-                  value={newCommentInput}
-                  onChange={(e) => setNewCommentInput(e.target.value)}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
+                  value={newReplyText}
+                  onChange={(e) => setNewReplyText(e.target.value)}
+                  placeholder="Post your reply to the thread..."
+                  className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-full text-xs text-white focus:outline-none focus:border-[#1D9BF0]"
+                  required
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs"
+                  className="p-2 rounded-full bg-[#1D9BF0] hover:bg-sky-400 text-white"
                 >
-                  Reply
+                  <Send size={14} />
                 </button>
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      {/* User Profile View Modal */}
-      <AnimatePresence>
-        {selectedUserProfile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5 text-center relative"
-            >
-              <button
-                onClick={() => setSelectedUserProfile(null)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-
-              <img
-                src={selectedUserProfile.avatar}
-                alt={selectedUserProfile.name}
-                className="w-20 h-20 rounded-full object-cover border-2 border-rose-500/50 mx-auto"
-              />
-
-              <div>
-                <h3 className="text-xl font-bold font-display text-white">
-                  {selectedUserProfile.name}
-                </h3>
-                <p className="text-xs text-zinc-400 font-mono">
-                  {selectedUserProfile.handle}
-                </p>
-                {selectedUserProfile.badge && (
-                  <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-mono border border-rose-500/20">
-                    {selectedUserProfile.badge}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-zinc-300 leading-relaxed">
-                {selectedUserProfile.bio || "Active contributor across the Sphere creator ecosystem."}
-              </p>
-
-              <div className="pt-2">
-                <button
-                  onClick={() => toggleFollow(selectedUserProfile.handle)}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs transition-colors ${
-                    followedUsers.has(selectedUserProfile.handle)
-                      ? "bg-white/10 text-zinc-300"
-                      : "bg-rose-500 text-white hover:bg-rose-400"
-                  }`}
-                >
-                  {followedUsers.has(selectedUserProfile.handle) ? "Following" : "Follow Creator"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {shareToast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-zinc-900 border border-white/20 text-xs font-mono text-emerald-400 shadow-2xl">
-          Permalink Copied to Clipboard!
-        </div>
-      )}
     </div>
   );
 };
-
-export default SocialDemo;

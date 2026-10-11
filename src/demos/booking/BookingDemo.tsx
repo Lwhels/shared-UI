@@ -1,18 +1,5 @@
 import React, { useState } from "react";
 import confetti from "canvas-confetti";
-import {
-  ThreeDCard,
-  CardContainer,
-  CardBody,
-  CardItem,
-  Carousel3D,
-  InfiniteMovingCards,
-  MovingBorderButton,
-  GlassCard,
-  GlowingBadge,
-  TextReveal,
-} from "../../components";
-import { formatCurrency } from "../../lib/utils";
 import { processPayment } from "../../services/paymentService";
 import { sendEmail } from "../../services/emailService";
 import {
@@ -31,562 +18,725 @@ import {
   CheckCircle2,
   Lock,
   Compass,
+  Sun,
+  Anchor,
+  Palmtree,
+  ArrowRight,
+  Map,
+  Grid,
+  Heart,
+  SlidersHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Sanctuary {
   id: string;
   name: string;
-  location: string;
-  pricePerNight: number;
+  region: "amalfi" | "santorini" | "kyoto" | "antibes";
+  locationTitle: string;
+  country: string;
+  gpsCoords: string;
+  pricePerNightEUR: number;
   rating: number;
   reviewsCount: number;
   bedrooms: number;
+  bathrooms: number;
   guestsMax: number;
+  landAreaAcres: number;
   amenities: string[];
-  gradient: string;
   description: string;
-  fullOverview: string;
+  architecturalOverview: string;
+  climateNow: string;
 }
 
 export const BookingDemo: React.FC = () => {
-  const [destination, setDestination] = useState("all");
-  const [guests, setGuests] = useState(2);
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [nights, setNights] = useState<number>(5);
+  const [checkInDate, setCheckInDate] = useState<string>("2026-10-28");
+  const [guestCount, setGuestCount] = useState<number>(2);
   const [selectedSanctuary, setSelectedSanctuary] = useState<Sanctuary | null>(null);
-  const [nights, setNights] = useState(4);
-  const [checkInDate, setCheckInDate] = useState("2026-11-05");
 
-  // Add-on Concierge Services
-  const [addYacht, setAddYacht] = useState(false);
-  const [addHelicopter, setAddHelicopter] = useState(false);
-  const [addPrivateChef, setAddPrivateChef] = useState(true);
+  // Add-ons
+  const [addYachtCharter, setAddYachtCharter] = useState<boolean>(false);
+  const [addHeliTransfer, setAddHeliTransfer] = useState<boolean>(false);
+  const [addPrivateChef, setAddPrivateChef] = useState<boolean>(true);
 
   // Checkout Modal
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
 
-  // Form Fields
-  const [guestName, setGuestName] = useState("Lord Sterling Fairfax");
-  const [guestEmail, setGuestEmail] = useState("sterling@fairfaxgroup.co.uk");
-  const [guestPhone, setGuestPhone] = useState("+44 20 7946 0912");
+  // Guest details
+  const [guestName, setGuestName] = useState("Lady Alistair Pembroke");
+  const [guestEmail, setGuestEmail] = useState("alistair.pembroke@retreats.eu");
+  const [guestPhone, setGuestPhone] = useState("+33 6 40 92 11 80");
+  const [specialRequests, setSpecialRequests] = useState("Arriving via private helicopter at 16:00. Chilled vintage Dom Pérignon in master salon.");
 
   const sanctuaries: Sanctuary[] = [
     {
       id: "sanct-1",
       name: "Villa Terrazza Del Sole",
-      location: "Positano, Amalfi Coast",
-      pricePerNight: 1250,
+      region: "amalfi",
+      locationTitle: "Positano, Amalfi Coast",
+      country: "Italy",
+      gpsCoords: "40.6281° N, 14.4850° E",
+      pricePerNightEUR: 1650,
       rating: 4.98,
-      reviewsCount: 84,
-      bedrooms: 4,
-      guestsMax: 8,
-      amenities: ["Infinity Pool", "Private Sea Dock", "Dedicated Butler", "Helipad Access", "Wine Cellar"],
-      gradient: "from-amber-600/30 via-orange-900/20 to-zinc-950",
-      description: "Carved into sheer sea cliffs overlooking Positano bay with private funicular down to the sapphire water.",
-      fullOverview: "A 4-bedroom cliffside masterpiece suspended 150 meters above the Mediterranean. Features an automated seawater infinity pool, private funicular descending to a private mooring dock, and 24/7 dedicated butler service.",
+      reviewsCount: 88,
+      bedrooms: 5,
+      bathrooms: 6,
+      guestsMax: 10,
+      landAreaAcres: 3.2,
+      amenities: ["Heated Seawater Infinity Pool", "Private Funicular to Ocean", "Dedicated 24/7 Butler", "Helipad Access", "Wine Cellar Vault"],
+      description: "Carved into the sheer limestone cliffs of Positano with panoramic views across the turquoise Tyrrhenian Sea.",
+      architecturalOverview: "An architectural marvel constructed across three cascading terraces of hand-dressed Roman travertine. Features floor-to-ceiling guillotine glass apertures that open fully to Mediterranean sea breezes and citrus orchards.",
+      climateNow: "25°C · Sunny",
     },
     {
       id: "sanct-2",
-      name: "Komorebi Forest Pavilion",
-      location: "Kyoto Highlands, Japan",
-      pricePerNight: 980,
+      name: "Komorebi Cypress Pavilion",
+      region: "kyoto",
+      locationTitle: "Arashiyama Highlands, Kyoto",
+      country: "Japan",
+      gpsCoords: "35.0116° N, 135.6778° E",
+      pricePerNightEUR: 1380,
       rating: 5.0,
-      reviewsCount: 62,
-      bedrooms: 3,
-      guestsMax: 6,
-      amenities: ["Cedar Onsen", "Tea Pavilion", "Zen Garden", "Private Kaiseki Chef"],
-      gradient: "from-emerald-600/30 via-teal-900/20 to-zinc-950",
-      description: "Nestled amidst ancient cedar groves with geothermal hot spring baths and architectural cypress joinery.",
-      fullOverview: "Surrounded by 400-year-old Japanese cedar forests. Built with traditional mortise-and-tenon joints without a single iron nail. Heated geothermal spring water feeds the indoor and outdoor hinoki wood onsen.",
+      reviewsCount: 64,
+      bedrooms: 4,
+      bathrooms: 4,
+      guestsMax: 8,
+      landAreaAcres: 5.8,
+      amenities: ["Volcanic Cedar Onsen", "Traditional Sukiya Tea Room", "Moss Rock Garden", "Master Kaiseki Chef", "Bamboo Forest Walkway"],
+      description: "A sanctuary of acoustic silence nestled among centuries-old red maples and geothermal mountain springs.",
+      architecturalOverview: "Crafted entirely using mortise-and-tenon joinery with aged Hinoki cypress wood and handmade shoji screens. Geothermal volcanic waters feed indoor and open-air granite bathing pools overlooking the private valley.",
+      climateNow: "21°C · Clear Sky",
     },
     {
       id: "sanct-3",
-      name: "Solarium Desert Compound",
-      location: "Joshua Tree, California",
-      pricePerNight: 850,
-      rating: 4.95,
-      reviewsCount: 96,
-      bedrooms: 2,
-      guestsMax: 4,
-      amenities: ["Stargazing Deck", "Plunge Pool", "Outdoor Firepit", "Solar Powered", "Sound System"],
-      gradient: "from-rose-600/30 via-amber-900/20 to-zinc-950",
-      description: "Minimalist rammed-earth compound with 360-degree desert panoramas and zero light pollution.",
-      fullOverview: "Constructed entirely from stabilized rammed earth and low-iron solar glass. Situated on 80 private acres bordering the National Park with automated telescope observatory deck.",
+      name: "Aegis Caldera Monolith",
+      region: "santorini",
+      locationTitle: "Imerovigli Cliffside, Santorini",
+      country: "Greece",
+      gpsCoords: "36.4328° N, 25.4228° E",
+      pricePerNightEUR: 1820,
+      rating: 4.97,
+      reviewsCount: 94,
+      bedrooms: 4,
+      bathrooms: 5,
+      guestsMax: 8,
+      landAreaAcres: 2.4,
+      amenities: ["Cantilevered Caldera Pool", "Sunset Observation Deck", "Private Catamaran Mooring", "Sommelier Cellar", "Subterranean Spa"],
+      description: "Perched at the highest ridge of the volcanic caldera with unobstructed 360-degree sunset panoramas.",
+      architecturalOverview: "Sculpted from white lime plaster and volcanic pumice in minimalist cycladic geometry. The cantilevered lap pool appears suspended directly between Aegean azure water and starlit sky.",
+      climateNow: "27°C · Sea Breeze",
+    },
+    {
+      id: "sanct-4",
+      name: "Cap D'Azur Coastal Bastide",
+      region: "antibes",
+      locationTitle: "Cap d'Antibes, French Riviera",
+      country: "France",
+      gpsCoords: "43.5513° N, 7.1264° E",
+      pricePerNightEUR: 2100,
+      rating: 4.96,
+      reviewsCount: 72,
+      bedrooms: 6,
+      bathrooms: 7,
+      guestsMax: 12,
+      landAreaAcres: 4.5,
+      amenities: ["Private Mediterranean Cove", "Olympic Lap Pool", "Clay Tennis Court", "Chauffeured Riva Aquarama", "Private Security Quarters"],
+      description: "A Belle Époque estate set within centuries-old umbrella pine groves touching the crystal waters of the Riviera.",
+      architecturalOverview: "Restored by French architectural conservationists, this historic coastal bastide pairs antique herringbone parquet floors with minimalist Italian marble baths and a private deep-water dock for superyacht tenders.",
+      climateNow: "24°C · Starlit",
     },
   ];
 
-  const filteredSanctuaries =
-    destination === "all"
-      ? sanctuaries
-      : sanctuaries.filter((s) => s.location.toLowerCase().includes(destination.toLowerCase()));
+  const filteredSanctuaries = sanctuaries.filter(
+    (s) => selectedRegion === "all" || s.region === selectedRegion
+  );
 
-  // Price Calculation
-  const baseCost = selectedSanctuary ? selectedSanctuary.pricePerNight * nights : 0;
-  const yachtFee = addYacht ? 3200 : 0;
-  const heliFee = addHelicopter ? 2400 : 0;
-  const chefFee = addPrivateChef ? 1200 : 0;
-  const subtotal = baseCost + yachtFee + heliFee + chefFee;
-  const taxesAndFees = Math.round(subtotal * 0.12);
-  const grandTotal = subtotal + taxesAndFees;
+  // Pricing Calculation
+  const activeSanctuary = selectedSanctuary || sanctuaries[0];
+  const baseAccommodationEUR = activeSanctuary.pricePerNightEUR * nights;
+  const yachtCostEUR = addYachtCharter ? 1600 : 0;
+  const heliCostEUR = addHeliTransfer ? 950 : 0;
+  const chefCostEUR = addPrivateChef ? 380 * nights : 0;
+  const grandTotalEUR = baseAccommodationEUR + yachtCostEUR + heliCostEUR + chefCostEUR;
 
-  const handleProcessReservation = async (e: React.FormEvent) => {
+  const handleBookingConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSanctuary) return;
     setIsProcessing(true);
 
-    const paymentResult = await processPayment({
-      cardNumber: "4242 4242 4242 4242",
-      cardHolder: guestName,
-      expiry: "12/28",
-      cvv: "892",
-      amount: grandTotal,
-      description: `Villa Sanctuary Stay: ${selectedSanctuary.name}`,
-      customerEmail: guestEmail,
-    });
+    const bookingRef = `AURA-RES-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    const bookingRef = `VEL-${Math.floor(Math.random() * 900000 + 100000)}`;
+    try {
+      await processPayment({
+        cardNumber: "4242 4242 4242 4242",
+        cardHolder: guestName,
+        expiry: "09/29",
+        cvv: "882",
+        amount: grandTotalEUR,
+        currency: "EUR",
+        description: `Aura Sanctuary Stay: ${activeSanctuary.name} (${nights} Nights)`,
+        customerEmail: guestEmail,
+      });
 
-    await sendEmail({
-      to: guestEmail,
-      subject: `Luxury Stay Confirmed: ${selectedSanctuary.name} (${bookingRef})`,
-      template: "booking_confirmation",
-      data: {
-        bookingRef,
-        sanctuaryName: selectedSanctuary.name,
-        location: selectedSanctuary.location,
+      await sendEmail({
+        to: guestEmail,
+        subject: `Sanctuary Reservation Confirmed: ${bookingRef} — ${activeSanctuary.name}`,
+        template: "order_confirmation",
+        data: {
+          customerName: guestName,
+          shippingAddress: `${activeSanctuary.locationTitle} (${activeSanctuary.gpsCoords})`,
+          amountPaid: `€${grandTotalEUR.toLocaleString()}`,
+          chargeId: bookingRef,
+          last4: "VILLA-VIP",
+          items: [
+            `${activeSanctuary.name} (${nights} Nights: ${checkInDate})`,
+            addPrivateChef ? "Dedicated Michelin In-Villa Private Chef" : "",
+            addYachtCharter ? "Sunset Riva Yacht Charter" : "",
+            addHeliTransfer ? "Private Helicopter Airport Transfer" : "",
+          ].filter(Boolean),
+        },
+      });
+
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ["#C25E42", "#1B3B52", "#EAE4D9", "#FFFFFF"],
+      });
+
+      setConfirmedBooking({
+        ref: bookingRef,
+        villa: activeSanctuary.name,
+        location: activeSanctuary.locationTitle,
+        nights,
         checkIn: checkInDate,
-        duration: `${nights} Nights`,
-        guests: `${guests} Guests`,
-        totalPaid: formatCurrency(grandTotal),
-        conciergeNotes: [
-          addYacht ? "Private Yacht Charter" : null,
-          addHelicopter ? "Helicopter Transfer" : null,
-          addPrivateChef ? "In-Villa Private Chef" : null,
-        ].filter(Boolean).join(", "),
-      },
-    });
+        guests: guestCount,
+        total: grandTotalEUR,
+        email: guestEmail,
+      });
 
-    confetti({
-      particleCount: 120,
-      spread: 75,
-      origin: { y: 0.6 },
-    });
-
-    setConfirmedBooking({
-      ref: bookingRef,
-      sanctuary: selectedSanctuary.name,
-      total: grandTotal,
-      checkIn: checkInDate,
-      email: guestEmail,
-    });
-
-    setIsProcessing(false);
+      setIsProcessing(false);
+    } catch (err: any) {
+      setIsProcessing(false);
+      alert(err.message || "Booking authorization failed");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-white">
-      {/* Hero Section */}
-      <section className="relative py-24 px-6 text-center overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-[#F7F4EE] text-[#2C2825] font-sans selection:bg-[#C25E42]/20 selection:text-[#2C2825]">
+      {/* Sun-Drenched Weather & Resort Telemetry Header */}
+      <div className="bg-[#EDE6DC] border-b border-[#E4DCD3] px-4 sm:px-8 py-2 text-[11px] font-mono tracking-wider flex items-center justify-between text-stone-600">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-[#C25E42] font-bold">
+            <Sun size={13} />
+            <span>AURA SANCTUARIES · AUTUMN SUN RETREATS</span>
+          </span>
+          <span className="hidden md:inline text-stone-400">|</span>
+          <span className="hidden md:inline">
+            Amalfi Coast: 25°C · Water Temp: 23°C
+          </span>
+        </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto space-y-6">
-          <div className="flex justify-center">
-            <GlowingBadge variant="amber">VELUM PRIVATE SANCTUARIES · BESPOKE STAYS</GlowingBadge>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:inline">Concierge Service: 24/7 Available</span>
+          <span className="px-2 py-0.5 rounded-full bg-[#C25E42] text-white text-[10px] font-bold">
+            LUXE VERIFIED
+          </span>
+        </div>
+      </div>
+
+      {/* Main Luxury Resort Header */}
+      <header className="sticky top-0 z-40 bg-[#F7F4EE]/90 backdrop-blur-md border-b border-[#E4DCD3]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="font-serif text-2xl sm:text-3xl text-[#2C2825] tracking-tight italic">
+              Aura Sanctuaries
+            </h1>
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-500">
+              Architectural Private Estates & Ocean Retreats
+            </p>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold font-serif tracking-tight leading-[1.08]">
-            Extraordinary Villas in the{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-500">
-              <TextReveal text="World's Remote Sanctuaries." />
-            </span>
-          </h1>
+          <div className="flex items-center gap-3">
+            {/* View Switcher */}
+            <div className="flex items-center bg-[#EDE6DC] p-1 rounded-full border border-stone-300">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-full transition-colors ${
+                  viewMode === "grid" ? "bg-[#2C2825] text-white" : "text-stone-500 hover:text-stone-900"
+                }`}
+                title="Grid Gallery View"
+              >
+                <Grid size={15} />
+              </button>
+              <button
+                onClick={() => setViewMode("map")}
+                className={`p-1.5 rounded-full transition-colors ${
+                  viewMode === "map" ? "bg-[#2C2825] text-white" : "text-stone-500 hover:text-stone-900"
+                }`}
+                title="Interactive Coordinates Map"
+              >
+                <Map size={15} />
+              </button>
+            </div>
 
-          <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed">
-            Curated architectural estates, private islands, and alpine chalets staffed with bespoke Michelin private chefs and chauffeurs.
+            <button
+              onClick={() => {
+                setSelectedSanctuary(sanctuaries[0]);
+                setIsCheckoutOpen(true);
+              }}
+              className="px-5 py-2.5 rounded-full bg-[#C25E42] hover:bg-[#b05036] text-white text-xs font-mono font-bold tracking-wider transition-all shadow-md active:scale-95"
+            >
+              Reserve Sanctuary
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Sun-Drenched Architectural Hero */}
+      <section className="relative py-16 sm:py-24 px-4 sm:px-8 border-b border-[#E4DCD3] overflow-hidden bg-gradient-to-b from-[#F2ECE2] to-[#F7F4EE]">
+        <div className="max-w-5xl mx-auto text-center space-y-6">
+          <div className="inline-flex items-center gap-2 text-xs font-mono tracking-widest uppercase px-3 py-1 rounded-full bg-[#EDE6DC] border border-stone-300 text-stone-700">
+            <Palmtree size={13} className="text-[#C25E42]" />
+            <span>PRIVATE WATERFRONT ESTATES · ZERO PROXIMITY TO CROWDS</span>
+          </div>
+
+          <h2 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-normal leading-[1.08] text-[#2C2825]">
+            Where Ancient Land Meets <br />
+            <span className="italic text-[#C25E42] font-light">Sculpted Light.</span>
+          </h2>
+
+          <p className="text-sm sm:text-base text-stone-600 max-w-2xl mx-auto leading-relaxed font-light">
+            Private cliffside villas, secluded island pavilions, and alpine thermal estates designed by Pritzker-winning architects. Fully serviced with dedicated culinary teams and private ocean docks.
           </p>
 
-          {/* Search Bar Widget */}
-          <div className="max-w-3xl mx-auto p-3 rounded-2xl bg-zinc-900/90 border border-white/15 backdrop-blur-xl shadow-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-              <label className="text-[10px] font-mono uppercase tracking-wider text-amber-400 block mb-1">
-                Destination Filter
+          {/* Interactive Search Bar Widget */}
+          <div className="pt-4 max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-[#E4DCD3] p-4 grid grid-cols-1 sm:grid-cols-4 gap-4 text-left font-mono text-xs">
+            <div>
+              <label className="block text-[10px] text-stone-400 uppercase tracking-wider mb-1">
+                Destination
               </label>
               <select
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                className="w-full bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="w-full bg-[#F7F4EE] border border-stone-200 rounded-lg px-2.5 py-2 text-stone-800 font-semibold focus:outline-none focus:border-[#C25E42]"
               >
-                <option value="all" className="bg-zinc-900">All World Destinations</option>
-                <option value="Amalfi" className="bg-zinc-900">Amalfi Coast, Italy</option>
-                <option value="Kyoto" className="bg-zinc-900">Kyoto Highlands, Japan</option>
-                <option value="Joshua Tree" className="bg-zinc-900">Joshua Tree, California</option>
+                <option value="all">All Sanctuaries</option>
+                <option value="amalfi">Amalfi Coast, Italy</option>
+                <option value="santorini">Santorini, Greece</option>
+                <option value="kyoto">Kyoto Highlands, Japan</option>
+                <option value="antibes">Cap d'Antibes, France</option>
               </select>
             </div>
 
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-              <label className="text-[10px] font-mono uppercase tracking-wider text-amber-400 block mb-1">
+            <div>
+              <label className="block text-[10px] text-stone-400 uppercase tracking-wider mb-1">
+                Check-in Date
+              </label>
+              <input
+                type="date"
+                value={checkInDate}
+                onChange={(e) => setCheckInDate(e.target.value)}
+                className="w-full bg-[#F7F4EE] border border-stone-200 rounded-lg px-2.5 py-2 text-stone-800 font-semibold focus:outline-none focus:border-[#C25E42]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-stone-400 uppercase tracking-wider mb-1">
                 Stay Length
               </label>
               <select
                 value={nights}
                 onChange={(e) => setNights(Number(e.target.value))}
-                className="w-full bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
+                className="w-full bg-[#F7F4EE] border border-stone-200 rounded-lg px-2.5 py-2 text-stone-800 font-semibold focus:outline-none focus:border-[#C25E42]"
               >
-                <option value={3} className="bg-zinc-900">3 Nights (Weekend)</option>
-                <option value={4} className="bg-zinc-900">4 Nights (Standard)</option>
-                <option value={7} className="bg-zinc-900">7 Nights (Full Week)</option>
-                <option value={14} className="bg-zinc-900">14 Nights (Extended)</option>
+                {[3, 4, 5, 7, 10, 14].map((n) => (
+                  <option key={n} value={n}>
+                    {n} Nights
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-amber-400 block mb-1">
-                  Guests
-                </label>
-                <select
-                  value={guests}
-                  onChange={(e) => setGuests(Number(e.target.value))}
-                  className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
-                >
-                  <option value={2} className="bg-zinc-900">2 Guests</option>
-                  <option value={4} className="bg-zinc-900">4 Guests</option>
-                  <option value={6} className="bg-zinc-900">6 Guests</option>
-                  <option value={8} className="bg-zinc-900">8 Guests</option>
-                </select>
-              </div>
-
-              <button
-                onClick={() => {
-                  const target = document.getElementById("villas");
-                  target?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors shrink-0 shadow-md shadow-amber-500/20"
+            <div>
+              <label className="block text-[10px] text-stone-400 uppercase tracking-wider mb-1">
+                Guests
+              </label>
+              <select
+                value={guestCount}
+                onChange={(e) => setGuestCount(Number(e.target.value))}
+                className="w-full bg-[#F7F4EE] border border-stone-200 rounded-lg px-2.5 py-2 text-stone-800 font-semibold focus:outline-none focus:border-[#C25E42]"
               >
-                Find Stays
-              </button>
+                {[1, 2, 4, 6, 8, 10].map((g) => (
+                  <option key={g} value={g}>
+                    {g} Guests Max
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Sanctuary Cards with 3D Tilt */}
-      <section id="villas" className="py-20 px-6 max-w-7xl mx-auto">
-        <div className="text-center max-w-xl mx-auto mb-16 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            Featured Residences
-          </span>
-          <h2 className="text-3xl font-bold font-serif">
-            3D Tilt Residence Cards
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Hover to inspect architectural perspective and amenity specifications. Click to open reservation drawer.
-          </p>
-        </div>
+      {/* Main Content: Grid or Interactive Map */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
+        {viewMode === "map" ? (
+          /* Interactive Architectural Coordinates Map */
+          <div className="bg-white rounded-2xl border border-[#E4DCD3] p-8 shadow-xl space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-200 font-mono text-xs">
+              <span className="text-stone-500 uppercase tracking-wider">
+                ARCHITECTURAL COORDINATES ATLAS // SATELLITE RADAR
+              </span>
+              <span className="text-[#C25E42] font-bold">
+                {filteredSanctuaries.length} Monolithic Estates Plotted
+              </span>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {filteredSanctuaries.map((sanct) => (
-            <CardContainer key={sanct.id} className="w-full">
-              <CardBody className="w-full rounded-2xl p-6 bg-zinc-900/80 border border-white/10 hover:border-amber-500/40 backdrop-blur-xl flex flex-col justify-between h-[520px] group/card transition-all">
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <CardItem translateZ={30}>
-                      <span className="text-[11px] font-mono text-amber-400 flex items-center gap-1">
-                        <MapPin size={12} />
-                        {sanct.location}
-                      </span>
-                    </CardItem>
-                    <CardItem translateZ={20}>
-                      <div className="flex items-center gap-1 text-xs text-amber-300">
-                        <Star size={12} fill="currentColor" />
-                        <span>{sanct.rating}</span>
-                        <span className="text-zinc-500">({sanct.reviewsCount})</span>
-                      </div>
-                    </CardItem>
+            <div className="h-96 w-full rounded-xl bg-[#EDE6DC] relative overflow-hidden border border-stone-300 flex items-center justify-center">
+              {/* Simulated Map Topography Lines */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(194,94,66,0.1),transparent_50%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(27,59,82,0.1),transparent_50%)]" />
+
+              {/* Simulated Pins */}
+              {filteredSanctuaries.map((s, idx) => (
+                <div
+                  key={s.id}
+                  onClick={() => setSelectedSanctuary(s)}
+                  className="absolute cursor-pointer group"
+                  style={{
+                    top: `${25 + idx * 18}%`,
+                    left: `${20 + idx * 22}%`,
+                  }}
+                >
+                  <div className="flex items-center gap-2 bg-[#2C2825] text-white px-3 py-1.5 rounded-full shadow-2xl hover:scale-105 transition-transform border border-white/20">
+                    <MapPin size={13} className="text-[#C25E42]" />
+                    <span className="text-[11px] font-mono font-bold">{s.name}</span>
+                    <span className="text-[10px] font-mono text-[#EAE4D9]">
+                      €{s.pricePerNightEUR}/nt
+                    </span>
                   </div>
+                </div>
+              ))}
 
-                  <CardItem translateZ={60} rotateX={8} className="w-full mb-6">
-                    <div className={`h-44 w-full rounded-xl bg-gradient-to-tr ${sanct.gradient} border border-white/10 flex flex-col justify-between p-4 relative overflow-hidden group-hover/card:scale-105 transition-transform`}>
-                      <div className="flex justify-between text-xs font-mono text-white/80">
-                        <span>{sanct.bedrooms} Bedrooms</span>
-                        <span>Up to {sanct.guestsMax} Guests</span>
+              <div className="absolute bottom-4 left-4 text-[11px] font-mono text-stone-500 bg-white/80 px-3 py-1 rounded-md backdrop-blur">
+                Click any coordinate pin to view architectural case file.
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Architectural Villa Grid */
+          <div className="space-y-8">
+            <div className="flex items-center justify-between pb-4 border-b border-[#E4DCD3] font-mono text-xs text-stone-500">
+              <span>SHOWING {filteredSanctuaries.length} PRIVATE ESTATES</span>
+              <span>RATES QUOTED IN EUR (€) · INCLUSIVE OF TAX & PRIVATE BUTLER</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {filteredSanctuaries.map((sanct) => {
+                const totalForStay = sanct.pricePerNightEUR * nights;
+
+                return (
+                  <div
+                    key={sanct.id}
+                    className="bg-white rounded-2xl border border-[#E4DCD3] hover:border-stone-400 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col justify-between overflow-hidden group"
+                  >
+                    {/* Visual Frame */}
+                    <div className="relative aspect-[16/10] bg-[#EAE4D9] flex items-center justify-center p-8 overflow-hidden">
+                      <div className="absolute top-4 left-4 text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#2C2825] text-white">
+                        {sanct.locationTitle}
                       </div>
-                      <div className="text-xs font-mono text-amber-200">
-                        Verified Luxury Retreat
+
+                      <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/90 backdrop-blur px-2.5 py-1 rounded-full text-xs font-mono font-bold text-stone-800 shadow-sm">
+                        <Star size={12} className="fill-amber-500 text-amber-500" />
+                        <span>{sanct.rating.toFixed(2)}</span>
+                        <span className="text-stone-400">({sanct.reviewsCount})</span>
+                      </div>
+
+                      {/* Graphic Graphic Icon Representation */}
+                      <div className="text-center space-y-2 transform group-hover:scale-105 transition-transform duration-500">
+                        <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-stone-800 to-black text-amber-100 flex items-center justify-center shadow-2xl border border-stone-700">
+                          <Palmtree size={36} />
+                        </div>
+                        <p className="text-[11px] font-mono uppercase tracking-widest text-stone-500">
+                          GPS: {sanct.gpsCoords}
+                        </p>
+                      </div>
+
+                      <div className="absolute bottom-4 left-4 text-[11px] font-mono text-stone-700 bg-white/80 px-2.5 py-1 rounded-full backdrop-blur">
+                        Current Weather: {sanct.climateNow}
                       </div>
                     </div>
-                  </CardItem>
 
-                  <CardItem translateZ={40} className="w-full">
-                    <h3 className="text-xl font-bold font-serif text-white mb-2">
-                      {sanct.name}
-                    </h3>
-                  </CardItem>
-
-                  <CardItem translateZ={30} className="w-full">
-                    <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2 mb-4">
-                      {sanct.description}
-                    </p>
-                  </CardItem>
-
-                  <CardItem translateZ={40} className="w-full">
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {sanct.amenities.slice(0, 4).map((a, i) => (
-                        <span
-                          key={i}
-                          className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-zinc-300"
+                    {/* Content Box */}
+                    <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between space-y-6">
+                      <div className="space-y-3">
+                        <h3
+                          onClick={() => setSelectedSanctuary(sanct)}
+                          className="font-serif text-2xl text-[#2C2825] hover:text-[#C25E42] cursor-pointer transition-colors font-normal"
                         >
-                          {a}
-                        </span>
-                      ))}
+                          {sanct.name}
+                        </h3>
+
+                        <p className="text-xs text-stone-600 font-light leading-relaxed">
+                          {sanct.description}
+                        </p>
+
+                        {/* Specs Pill Strip */}
+                        <div className="pt-2 flex flex-wrap gap-2 text-xs font-mono text-stone-600">
+                          <span className="px-2.5 py-1 rounded-md bg-[#F7F4EE] border border-stone-200">
+                            {sanct.bedrooms} Suites
+                          </span>
+                          <span className="px-2.5 py-1 rounded-md bg-[#F7F4EE] border border-stone-200">
+                            {sanct.bathrooms} Baths
+                          </span>
+                          <span className="px-2.5 py-1 rounded-md bg-[#F7F4EE] border border-stone-200">
+                            {sanct.landAreaAcres} Private Acres
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Pricing & CTA */}
+                      <div className="pt-4 border-t border-[#EAE4D9] flex items-center justify-between">
+                        <div>
+                          <div className="flex items-baseline gap-1 font-mono">
+                            <span className="text-xl font-bold text-[#2C2825]">
+                              €{sanct.pricePerNightEUR.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-stone-400">/night</span>
+                          </div>
+                          <span className="text-[11px] font-mono text-[#C25E42] font-semibold block">
+                            €{totalForStay.toLocaleString()} for {nights} nights
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setSelectedSanctuary(sanct);
+                            setIsCheckoutOpen(true);
+                          }}
+                          className="px-5 py-2.5 rounded-full bg-[#2C2825] hover:bg-stone-800 text-white text-xs font-mono tracking-wider font-semibold transition-transform active:scale-95 shadow-md flex items-center gap-1.5"
+                        >
+                          <span>Reserve Stay</span>
+                          <ChevronRight size={13} />
+                        </button>
+                      </div>
                     </div>
-                  </CardItem>
-                </div>
-
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                  <CardItem translateZ={30}>
-                    <div>
-                      <span className="text-lg font-bold font-mono text-white">
-                        {formatCurrency(sanct.pricePerNight)}
-                      </span>
-                      <span className="text-xs text-zinc-500 font-mono"> / night</span>
-                    </div>
-                  </CardItem>
-
-                  <CardItem translateZ={40}>
-                    <button
-                      onClick={() => {
-                        setSelectedSanctuary(sanct);
-                        setConfirmedBooking(null);
-                        setIsCheckoutOpen(true);
-                      }}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-md shadow-amber-500/20 transition-transform active:scale-95"
-                    >
-                      Reserve Stay
-                    </button>
-                  </CardItem>
-                </div>
-              </CardBody>
-            </CardContainer>
-          ))}
-        </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* 3D Cylindrical Experience Carousel */}
-      <section className="py-20 px-6 max-w-6xl mx-auto overflow-hidden">
-        <div className="text-center mb-6 space-y-2">
-          <span className="text-xs font-mono text-amber-400 uppercase tracking-widest">
-            Concierge Catalog
-          </span>
-          <h2 className="text-3xl font-bold font-serif">
-            Curated Estate Experiences
-          </h2>
-          <p className="text-sm text-zinc-400">
-            Explore private charters and excursions included with every booking.
-          </p>
-        </div>
-
-        <Carousel3D
-          cards={[
-            {
-              title: "Private Riva Yacht Charter",
-              subtitle: "Mediterranean Coast",
-              badge: "Maritime",
-              content: "Full-day captained Riva Dolceriva yacht charter exploring secluded sea caves and secluded coves.",
-            },
-            {
-              title: "Helicopter Valley Transfer",
-              subtitle: "Zero-Traffic Arrival",
-              badge: "Aviation",
-              content: "Direct rooftop or lawn helipad pickup from regional international airport terminals.",
-            },
-            {
-              title: "Michelin Private Sommelier",
-              subtitle: "In-Villa Cellar Tasting",
-              badge: "Gastronomy",
-              content: "Five-course multi-vintage wine pairing dinner prepared directly in your sanctuary kitchen.",
-            },
-            {
-              title: "Thermal Saltwater Spa",
-              subtitle: "Holistic Restoration",
-              badge: "Wellness",
-              content: "Private licensed massage therapists and on-call yoga master for daily sunrise cliff sessions.",
-            },
-          ]}
-        />
-      </section>
-
-      {/* Guest Testimonial Marquee */}
-      <section className="py-16 border-t border-white/10 bg-zinc-950/40 overflow-hidden">
-        <div className="text-center mb-6">
-          <p className="text-xs font-mono uppercase tracking-widest text-amber-400">
-            Guest Endorsements
-          </p>
-        </div>
-        <InfiniteMovingCards
-          items={[
-            { quote: "Villa Terrazza exceeded all expectations. The private dock and sunset dinners were life-changing.", name: "Lord Julian Sterling", title: "London" },
-            { quote: "Komorebi Pavilion was the most peaceful retreat we have ever experienced.", name: "Dr. Kenji Takahashi", title: "Tokyo" },
-            { quote: "The concierge booked a helicopter on 30 minutes notice. Absolute perfection.", name: "Claire Dupont", title: "Geneva" },
-          ]}
-          speed="normal"
-        />
-      </section>
-
-      {/* Complete Reservation Checkout Modal with Stripe Simulation */}
+      {/* Turnkey Booking & Concierge Modal */}
       <AnimatePresence>
         {isCheckoutOpen && selectedSanctuary && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !confirmedBooking && setIsCheckoutOpen(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            />
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl bg-zinc-950 border border-white/15 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 my-8"
+              className="relative w-full max-w-2xl bg-[#F7F4EE] rounded-2xl shadow-2xl p-6 sm:p-8 border border-[#E4DCD3] z-10 max-h-[92vh] overflow-y-auto text-[#2C2825]"
             >
-              <div className="flex justify-between items-center pb-4 border-b border-white/10">
-                <div className="space-y-1">
-                  <GlowingBadge variant="amber">SANCTUARY RESERVATION</GlowingBadge>
-                  <h3 className="text-xl font-bold font-serif text-white">
-                    {selectedSanctuary.name}
+              <div className="flex items-center justify-between pb-6 border-b border-[#E4DCD3] mb-6">
+                <div>
+                  <h3 className="font-serif text-2xl text-[#2C2825]">
+                    Sanctuary Reservation File
                   </h3>
-                  <p className="text-xs text-zinc-400 flex items-center gap-1 font-mono">
-                    <MapPin size={11} /> {selectedSanctuary.location}
+                  <p className="text-xs font-mono text-[#C25E42] mt-0.5">
+                    {selectedSanctuary.name} · {selectedSanctuary.locationTitle}
                   </p>
                 </div>
-                <button
-                  onClick={() => setIsCheckoutOpen(false)}
-                  className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {confirmedBooking ? (
-                <div className="py-8 text-center space-y-4">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <CheckCircle2 size={36} />
-                  </div>
-                  <h4 className="text-2xl font-bold font-serif text-white">
-                    Sanctuary Reserved!
-                  </h4>
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-xs font-mono space-y-1.5 text-left max-w-sm mx-auto">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Booking Voucher:</span>
-                      <strong className="text-amber-400">{confirmedBooking.ref}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Check-in:</span>
-                      <span>{confirmedBooking.checkIn}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-400">Total Charged:</span>
-                      <span className="text-emerald-400 font-bold">{formatCurrency(confirmedBooking.total)}</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-zinc-400">
-                    A confirmation voucher and gate access code have been dispatched to {confirmedBooking.email}.
-                  </p>
+                {!confirmedBooking && (
                   <button
                     onClick={() => setIsCheckoutOpen(false)}
-                    className="px-6 py-2.5 rounded-full bg-amber-500 text-zinc-950 font-bold text-xs"
+                    className="p-1 rounded-full text-stone-400 hover:text-stone-800"
                   >
-                    Return to Residences
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+
+              {!confirmedBooking ? (
+                <form onSubmit={handleBookingConfirm} className="space-y-6 text-xs font-mono">
+                  {/* Summary Box */}
+                  <div className="p-4 rounded-xl bg-white border border-[#E4DCD3] space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-stone-500">Reserved Dates:</span>
+                      <strong>{checkInDate} ({nights} Nights)</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-500">Base Estate Rate:</span>
+                      <strong>€{baseAccommodationEUR.toLocaleString()}</strong>
+                    </div>
+                  </div>
+
+                  {/* Curated Luxury Add-ons */}
+                  <div className="space-y-2.5">
+                    <span className="text-[11px] uppercase tracking-wider text-stone-500 font-bold block">
+                      Curated Concierge Services
+                    </span>
+
+                    <label className="p-3 rounded-xl bg-white border border-[#E4DCD3] flex items-center justify-between cursor-pointer">
+                      <div className="space-y-0.5">
+                        <strong className="block text-stone-900">
+                          Dedicated In-Villa Michelin Chef (+€380/day)
+                        </strong>
+                        <span className="text-[11px] text-stone-500">
+                          Private breakfast, ocean lunch, and 5-course bespoke dinner.
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={addPrivateChef}
+                        onChange={(e) => setAddPrivateChef(e.target.checked)}
+                        className="w-4 h-4 accent-[#C25E42]"
+                      />
+                    </label>
+
+                    <label className="p-3 rounded-xl bg-white border border-[#E4DCD3] flex items-center justify-between cursor-pointer">
+                      <div className="space-y-0.5">
+                        <strong className="block text-stone-900">
+                          Sunset Riva Yacht Charter (+€1,600)
+                        </strong>
+                        <span className="text-[11px] text-stone-500">
+                          4-hour coastal cruise with champagne service and swimming stop.
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={addYachtCharter}
+                        onChange={(e) => setAddYachtCharter(e.target.checked)}
+                        className="w-4 h-4 accent-[#C25E42]"
+                      />
+                    </label>
+
+                    <label className="p-3 rounded-xl bg-white border border-[#E4DCD3] flex items-center justify-between cursor-pointer">
+                      <div className="space-y-0.5">
+                        <strong className="block text-stone-900">
+                          Private Helicopter Airport Transfer (+€950)
+                        </strong>
+                        <span className="text-[11px] text-stone-500">
+                          Direct landing on estate private helipad pad.
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={addHeliTransfer}
+                        onChange={(e) => setAddHeliTransfer(e.target.checked)}
+                        className="w-4 h-4 accent-[#C25E42]"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Guest Contact Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-stone-500 mb-1">Primary Guest Name</label>
+                      <input
+                        type="text"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        className="w-full bg-white border border-[#E4DCD3] rounded-lg px-3 py-2 text-stone-800 focus:outline-none focus:border-[#C25E42]"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-stone-500 mb-1">Email For Voucher</label>
+                      <input
+                        type="email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full bg-white border border-[#E4DCD3] rounded-lg px-3 py-2 text-stone-800 focus:outline-none focus:border-[#C25E42]"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-stone-500 mb-1">Special Concierge Instructions</label>
+                    <textarea
+                      rows={2}
+                      value={specialRequests}
+                      onChange={(e) => setSpecialRequests(e.target.value)}
+                      className="w-full bg-white border border-[#E4DCD3] rounded-lg px-3 py-2 text-stone-800 focus:outline-none focus:border-[#C25E42]"
+                    />
+                  </div>
+
+                  {/* Grand Total */}
+                  <div className="pt-2 border-t border-[#E4DCD3] flex items-center justify-between">
+                    <span className="text-stone-500">Grand Total Authorization:</span>
+                    <span className="font-serif text-2xl text-[#C25E42]">
+                      €{grandTotalEUR.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isProcessing}
+                    className="w-full py-4 rounded-full bg-[#C25E42] hover:bg-[#b05036] text-white font-bold tracking-wider transition-all shadow-xl shadow-[#C25E42]/20 disabled:opacity-50"
+                  >
+                    {isProcessing ? "Transmitting Reservation File..." : "Authorize Sanctuary Stay"}
+                  </button>
+                </form>
+              ) : (
+                /* Confirmed Stay Voucher */
+                <div className="text-center py-6 space-y-4 font-mono">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <CheckCircle2 size={36} />
+                  </div>
+
+                  <h4 className="font-serif text-2xl text-stone-900">
+                    Sanctuary Confirmed
+                  </h4>
+
+                  <p className="text-xs text-stone-600 max-w-sm mx-auto">
+                    Your arrival packet and access dossier have been transmitted to{" "}
+                    <strong>{confirmedBooking.email}</strong>.
+                  </p>
+
+                  <div className="bg-white p-4 rounded-xl text-left text-xs text-stone-700 space-y-1.5 border border-[#E4DCD3]">
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">Reservation Ref:</span>
+                      <strong className="text-stone-900">{confirmedBooking.ref}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">Sanctuary:</span>
+                      <strong>{confirmedBooking.villa}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">Duration:</span>
+                      <strong>{confirmedBooking.nights} Nights ({confirmedBooking.checkIn})</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-400">Grand Total:</span>
+                      <strong className="text-[#C25E42]">€{confirmedBooking.total.toLocaleString()}</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setConfirmedBooking(null);
+                      setIsCheckoutOpen(false);
+                    }}
+                    className="px-6 py-2.5 rounded-full bg-[#2C2825] text-white text-xs font-bold"
+                  >
+                    Return to Atlas
                   </button>
                 </div>
-              ) : (
-                <form onSubmit={handleProcessReservation} className="space-y-4">
-                  {/* Summary math */}
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 text-xs">
-                    <div className="flex justify-between text-zinc-400">
-                      <span>{formatCurrency(selectedSanctuary.pricePerNight)} x {nights} nights</span>
-                      <span>{formatCurrency(baseCost)}</span>
-                    </div>
-
-                    {/* Add-ons checkboxes */}
-                    <div className="py-2 space-y-1.5 border-y border-white/5">
-                      <label className="flex items-center justify-between text-[11px] text-zinc-300 cursor-pointer">
-                        <span>Captained Riva Yacht (+$3,200)</span>
-                        <input
-                          type="checkbox"
-                          checked={addYacht}
-                          onChange={(e) => setAddYacht(e.target.checked)}
-                          className="accent-amber-500"
-                        />
-                      </label>
-                      <label className="flex items-center justify-between text-[11px] text-zinc-300 cursor-pointer">
-                        <span>Airport Helicopter Transfer (+$2,400)</span>
-                        <input
-                          type="checkbox"
-                          checked={addHelicopter}
-                          onChange={(e) => setAddHelicopter(e.target.checked)}
-                          className="accent-amber-500"
-                        />
-                      </label>
-                      <label className="flex items-center justify-between text-[11px] text-zinc-300 cursor-pointer">
-                        <span>Private Michelin Chef Service (+$1,200)</span>
-                        <input
-                          type="checkbox"
-                          checked={addPrivateChef}
-                          onChange={(e) => setAddPrivateChef(e.target.checked)}
-                          className="accent-amber-500"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="flex justify-between text-zinc-400">
-                      <span>Concierge Service & Taxes (12%)</span>
-                      <span>{formatCurrency(taxesAndFees)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-white/10">
-                      <span>Total Reservation</span>
-                      <span className="text-amber-400 font-mono">
-                        {formatCurrency(grandTotal)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Primary Guest Name"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Email for Confirmation Voucher"
-                      value={guestEmail}
-                      onChange={(e) => setGuestEmail(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-400 flex items-center gap-1">
-                      <Lock size={11} /> Stripe Secured Payment Card
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      defaultValue="4242 4242 4242 4242"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isProcessing}
-                      className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-bold text-xs uppercase tracking-wider shadow-xl shadow-amber-500/25 transition-transform active:scale-95"
-                    >
-                      {isProcessing ? "Authorizing Stripe Payment..." : `Confirm Sanctuary Stay · ${formatCurrency(grandTotal)}`}
-                    </button>
-                  </div>
-                </form>
               )}
             </motion.div>
           </div>
@@ -595,5 +745,3 @@ export const BookingDemo: React.FC = () => {
     </div>
   );
 };
-
-export default BookingDemo;
