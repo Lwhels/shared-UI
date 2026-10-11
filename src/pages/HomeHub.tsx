@@ -179,8 +179,6 @@ export const HomeHub: React.FC = () => {
                 )}
               </button>
             </div>
-
-            <ThemeSwitcher />
           </div>
 
           {/* Action CTAs */}
@@ -282,30 +280,44 @@ export const HomeHub: React.FC = () => {
             Experiment with each extracted component in isolation with real-time controls and live code snippets.
           </p>
 
-          {/* Playground Tabs */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-6">
-            {[
-              { id: "spotlight", label: "Spotlight" },
-              { id: "threeDCard", label: "3D Perspective Card" },
-              { id: "movingBorder", label: "Moving Border Button" },
-              { id: "carousel3D", label: "3D Carousel Cylinder" },
-              { id: "infiniteCards", label: "Infinite Moving Cards" },
-              { id: "textReveal", label: "Text Scramble Reveal" },
-              { id: "bubbleReveal", label: "Bubble Reveal Lens" },
-              { id: "magnetic", label: "Magnetic Physics" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActivePlaygroundTab(tab.id)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-                  activePlaygroundTab === tab.id
-                    ? "bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/25"
-                    : "bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          {/* Playground Tabs & Theme Selector */}
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10 mt-6">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
+              {[
+                { id: "spotlight", label: "Spotlight" },
+                { id: "threeDCard", label: "3D Perspective Card" },
+                { id: "movingBorder", label: "Moving Border Button" },
+                { id: "carousel3D", label: "3D Carousel Cylinder" },
+                { id: "infiniteCards", label: "Infinite Moving Cards" },
+                { id: "textReveal", label: "Text Scramble Reveal" },
+                { id: "bubbleReveal", label: "Bubble Reveal Lens" },
+                { id: "magnetic", label: "Magnetic Physics" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActivePlaygroundTab(tab.id)}
+                  style={
+                    activePlaygroundTab === tab.id
+                      ? { backgroundColor: themeMeta.primaryColor }
+                      : {}
+                  }
+                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                    activePlaygroundTab === tab.id
+                      ? "text-zinc-950 shadow-md font-bold"
+                      : "bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0 bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-full">
+              <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
+                Component Theme:
+              </span>
+              <ThemeSwitcher />
+            </div>
           </div>
         </div>
 
@@ -340,30 +352,66 @@ export const HomeHub: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Spotlight size={spotlightSize} className="p-8 h-64 flex flex-col justify-between">
+                <Spotlight
+                  size={spotlightSize}
+                  spotlightColor={`${themeMeta.primaryColor}2e`}
+                  className="p-8 h-64 flex flex-col justify-between"
+                >
                   <div>
-                    <GlowingBadge variant="amber">Card Alpha</GlowingBadge>
+                    <GlowingBadge
+                      variant={
+                        theme === "indigo"
+                          ? "indigo"
+                          : theme === "emerald"
+                          ? "emerald"
+                          : theme === "rose"
+                          ? "rose"
+                          : "amber"
+                      }
+                    >
+                      {themeMeta.name}
+                    </GlowingBadge>
                     <h4 className="text-lg font-bold text-white mt-3">Hover across this canvas</h4>
                     <p className="text-xs text-zinc-400 mt-2">Notice how the radial light gently illuminates the edges and background gradient.</p>
                   </div>
-                  <span className="text-xs font-mono text-amber-400">Position Tracking Active →</span>
+                  <span className="text-xs font-mono" style={{ color: themeMeta.primaryColor }}>
+                    Position Tracking Active ({themeMeta.primaryColor}) →
+                  </span>
                 </Spotlight>
 
-                <Spotlight size={spotlightSize} className="p-8 h-64 flex flex-col justify-between">
+                <Spotlight
+                  size={spotlightSize}
+                  spotlightColor={`${themeMeta.primaryColor}3d`}
+                  className="p-8 h-64 flex flex-col justify-between"
+                >
                   <div>
-                    <GlowingBadge variant="indigo">Card Beta</GlowingBadge>
+                    <GlowingBadge
+                      variant={
+                        theme === "indigo"
+                          ? "indigo"
+                          : theme === "emerald"
+                          ? "emerald"
+                          : theme === "rose"
+                          ? "rose"
+                          : "amber"
+                      }
+                    >
+                      Theme Preset
+                    </GlowingBadge>
                     <h4 className="text-lg font-bold text-white mt-3">Smooth Motion Interpolation</h4>
                     <p className="text-xs text-zinc-400 mt-2">Zero jank or CSS lag on high refresh rate displays.</p>
                   </div>
-                  <span className="text-xs font-mono text-indigo-400">Position Tracking Active →</span>
+                  <span className="text-xs font-mono" style={{ color: themeMeta.primaryColor }}>
+                    Active Color: {themeMeta.primaryColor} →
+                  </span>
                 </Spotlight>
               </div>
 
               {/* Code Snippet */}
               <div className="p-4 rounded-xl bg-black/60 border border-white/10 font-mono text-xs flex justify-between items-center text-zinc-300">
-                <code>{`import { Spotlight } from "shared-ui";\n\n<Spotlight size={600} spotlightColor="rgba(245,158,11,0.18)">\n  <h3>Interactive Card</h3>\n</Spotlight>`}</code>
+                <code>{`import { Spotlight } from "shared-ui";\n\n<Spotlight size={${spotlightSize}} spotlightColor="${themeMeta.primaryColor}2e">\n  <h3>Interactive Card</h3>\n</Spotlight>`}</code>
                 <button
-                  onClick={() => copyToClipboard(`<Spotlight size={600} spotlightColor="rgba(245,158,11,0.18)">\n  <h3>Interactive Card</h3>\n</Spotlight>`, "code-spotlight")}
+                  onClick={() => copyToClipboard(`<Spotlight size={${spotlightSize}} spotlightColor="${themeMeta.primaryColor}2e">\n  <h3>Interactive Card</h3>\n</Spotlight>`, "code-spotlight")}
                   className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white"
                   title="Copy snippet"
                 >
@@ -457,8 +505,13 @@ export const HomeHub: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-8 py-12">
-                <MovingBorderButton duration={2500} className="font-bold text-amber-300">
-                  Amber Orbit Beam
+                <MovingBorderButton
+                  duration={2500}
+                  borderClassName={`bg-[radial-gradient(${themeMeta.primaryColor}_40%,transparent_60%)]`}
+                  className="font-bold"
+                  style={{ color: themeMeta.primaryColor }}
+                >
+                  {themeMeta.name} Active Beam
                 </MovingBorderButton>
 
                 <MovingBorderButton

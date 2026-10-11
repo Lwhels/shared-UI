@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ThemeSwitcher } from "./ThemeSwitcher";
 import { Magnetic } from "./Magnetic";
 import {
   Menu,
@@ -138,8 +137,6 @@ export const Navbar: React.FC = () => {
 
         {/* Action Controls */}
         <div className="flex items-center gap-3">
-          <ThemeSwitcher />
-
           <Magnetic strength={0.3}>
             <a
               href="https://github.com/Lwhels/shared-UI"
