@@ -10,5 +10,6 @@ export * from "./Magnetic";
 export * from "./GlassCard";
 export * from "./InteractiveBadge";
 export * from "./ThemeSwitcher";
+export * from "./ComponentSourceModal";
 export * from "./Navbar";
 export * from "./Footer";

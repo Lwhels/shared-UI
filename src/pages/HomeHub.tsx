@@ -17,6 +17,7 @@ import {
   GlowingBadge,
   StatusDot,
   ThemeSwitcher,
+  ComponentSourceModal,
 } from "../components";
 import { useTheme } from "../context/ThemeContext";
 import { DEMO_LINKS } from "../components/Navbar";
@@ -42,6 +43,7 @@ export const HomeHub: React.FC = () => {
   const { theme, setTheme, themeMeta } = useTheme();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [activePlaygroundTab, setActivePlaygroundTab] = useState<string>("spotlight");
+  const [sourceModalComponent, setSourceModalComponent] = useState<string | null>(null);
   const [scrambleCustomText, setScrambleCustomText] = useState("CRAFTING THE FUTURE");
   const [spotlightSize, setSpotlightSize] = useState(600);
 
@@ -318,6 +320,13 @@ export const HomeHub: React.FC = () => {
                   <p className="text-xs text-zinc-400">Reactive radial glow follows mouse position via Framer Motion useMotionTemplate.</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setSourceModalComponent("Spotlight")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                  >
+                    <Code2 size={13} />
+                    <span>View Raw File</span>
+                  </button>
                   <label className="text-xs text-zinc-400 font-mono">Radius: {spotlightSize}px</label>
                   <input
                     type="range"
@@ -367,9 +376,18 @@ export const HomeHub: React.FC = () => {
           {/* TAB 2: THREEDCARD */}
           {activePlaygroundTab === "threeDCard" && (
             <div className="space-y-8">
-              <div className="pb-6 border-b border-white/10">
-                <h3 className="text-xl font-bold font-display text-white">3D Perspective Tilt Card</h3>
-                <p className="text-xs text-zinc-400">True 3D perspective with independent translateZ layers and rotation dampeners.</p>
+              <div className="pb-6 border-b border-white/10 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold font-display text-white">3D Perspective Tilt Card</h3>
+                  <p className="text-xs text-zinc-400">True 3D perspective with independent translateZ layers and rotation dampeners.</p>
+                </div>
+                <button
+                  onClick={() => setSourceModalComponent("ThreeDCard")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                >
+                  <Code2 size={13} />
+                  <span>View Raw File</span>
+                </button>
               </div>
 
               <div className="flex justify-center">
@@ -424,9 +442,18 @@ export const HomeHub: React.FC = () => {
           {/* TAB 3: MOVING BORDER */}
           {activePlaygroundTab === "movingBorder" && (
             <div className="space-y-8">
-              <div className="pb-6 border-b border-white/10">
-                <h3 className="text-xl font-bold font-display text-white">Moving Border Buttons</h3>
-                <p className="text-xs text-zinc-400">SVG path progress traced continuously with requestAnimationFrame glowing beam.</p>
+              <div className="pb-6 border-b border-white/10 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold font-display text-white">Moving Border Buttons</h3>
+                  <p className="text-xs text-zinc-400">SVG path progress traced continuously with requestAnimationFrame glowing beam.</p>
+                </div>
+                <button
+                  onClick={() => setSourceModalComponent("MovingBorder")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                >
+                  <Code2 size={13} />
+                  <span>View Raw File</span>
+                </button>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-8 py-12">
@@ -526,9 +553,18 @@ export const HomeHub: React.FC = () => {
           {/* TAB 6: TEXT REVEAL */}
           {activePlaygroundTab === "textReveal" && (
             <div className="space-y-8">
-              <div className="pb-6 border-b border-white/10">
-                <h3 className="text-xl font-bold font-display text-white">Text Scramble Matrix Reveal</h3>
-                <p className="text-xs text-zinc-400">Character bank randomizer decrypting sequentially into targeted strings.</p>
+              <div className="pb-6 border-b border-white/10 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold font-display text-white">Text Scramble Matrix Reveal</h3>
+                  <p className="text-xs text-zinc-400">Character bank randomizer decrypting sequentially into targeted strings.</p>
+                </div>
+                <button
+                  onClick={() => setSourceModalComponent("TextReveal")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                >
+                  <Code2 size={13} />
+                  <span>View Raw File</span>
+                </button>
               </div>
 
               <div className="text-center py-10 space-y-4">
@@ -568,9 +604,18 @@ export const HomeHub: React.FC = () => {
           {/* TAB 7: BUBBLE REVEAL */}
           {activePlaygroundTab === "bubbleReveal" && (
             <div className="space-y-8">
-              <div className="pb-6 border-b border-white/10">
-                <h3 className="text-xl font-bold font-display text-white">Bubble Reveal Circular Lens</h3>
-                <p className="text-xs text-zinc-400">Spring follower mask revealing underlying canvas with illuminated perimeter ring.</p>
+              <div className="pb-6 border-b border-white/10 flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold font-display text-white">Bubble Reveal Circular Lens</h3>
+                  <p className="text-xs text-zinc-400">Spring follower mask revealing underlying canvas with illuminated perimeter ring.</p>
+                </div>
+                <button
+                  onClick={() => setSourceModalComponent("BubbleReveal")}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-colors"
+                >
+                  <Code2 size={13} />
+                  <span>View Raw File</span>
+                </button>
               </div>
 
               <div className="h-[360px] w-full rounded-2xl overflow-hidden border border-white/15 relative shadow-2xl bg-zinc-950">
@@ -719,6 +764,11 @@ export const HomeHub: React.FC = () => {
           </table>
         </div>
       </section>
+
+      <ComponentSourceModal
+        componentName={sourceModalComponent}
+        onClose={() => setSourceModalComponent(null)}
+      />
     </div>
   );
 };

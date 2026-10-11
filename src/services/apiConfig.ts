@@ -24,13 +24,13 @@ const EMAIL_OUTBOX_KEY = "shared_ui_email_outbox";
 
 const DEFAULT_CONFIG: ApiConfigState = {
   isMockMode: true,
-  stripeKey: "",
-  openaiKey: "",
-  geminiKey: "",
-  resendKey: "",
-  supabaseUrl: "",
-  supabaseKey: "",
-  mapboxKey: "",
+  stripeKey: (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || "",
+  openaiKey: (import.meta as any).env?.VITE_OPENAI_API_KEY || "",
+  geminiKey: (import.meta as any).env?.VITE_GEMINI_API_KEY || "",
+  resendKey: (import.meta as any).env?.VITE_RESEND_API_KEY || "",
+  supabaseUrl: (import.meta as any).env?.VITE_SUPABASE_URL || "",
+  supabaseKey: (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "",
+  mapboxKey: (import.meta as any).env?.VITE_MAPBOX_TOKEN || "",
 };
 
 export function getApiConfig(): ApiConfigState {
